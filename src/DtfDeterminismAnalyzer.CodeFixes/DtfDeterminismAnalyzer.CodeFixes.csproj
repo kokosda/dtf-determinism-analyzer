@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Multi-targeting for broad compatibility -->
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    
+    <!-- Language and nullable reference types -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors>nullable</WarningsNotAsErrors>
+    
+    <!-- Assembly information -->
+    <AssemblyTitle>DTF Determinism Analyzer Code Fixes</AssemblyTitle>
+    <Description>Code fix providers for DTF Determinism Analyzer diagnostics</Description>
+    <Product>DTF Determinism Analyzer</Product>
+    <Copyright>Copyright © 2025</Copyright>
+    
+    <!-- NuGet packaging configuration -->
+    <IsPackable>false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    
+    <!-- Constitution compliance -->
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Performance optimizations -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Code fix provider dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
+    <PackageReference Include="System.Composition.AttributedModel" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Assembly metadata -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryUrl</_Parameter1>
+      <_Parameter2>$(RepositoryUrl)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildBranch</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEBRANCH)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildCommit</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEVERSION)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

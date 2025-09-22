@@ -1,0 +1,55 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable Central Package Management -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Treat package version conflicts as errors -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Roslyn Analyzer Dependencies -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
+    <!-- Code Fix Dependencies -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.NUnit" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.NUnit" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Testing.Verifiers.NUnit" Version="1.1.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.8.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Abstractions" Version="1.2.0" />
+    <PackageVersion Include="System.Composition.AttributedModel" Version="8.0.0" />
+    <!-- Testing Framework -->
+    <PackageVersion Include="NUnit" Version="3.14.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <!-- Build and Source Link -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <PackageVersion Include="MinVer" Version="4.3.0" />
+    <!-- NuGet Package Analysis -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" />
+    <!-- Durable Task Framework References (for testing orchestrator detection) -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Extensions" Version="1.1.0" />
+    <PackageVersion Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.13.0" />
+    <PackageVersion Include="DurableTask.Core" Version="2.0.0.6" />
+    <!-- Core DTF packages for samples -->
+    <PackageVersion Include="Microsoft.DurableTask.Client" Version="1.2.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Worker" Version="1.2.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <!-- Azure Functions Worker (v4 isolated) -->
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="1.19.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.16.4" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.1.0" />
+    <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.1.0" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <!-- JSON and Configuration -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
+    <!-- DTF Determinism Analyzer -->
+    <PackageVersion Include="DtfDeterminismAnalyzer" Version="1.0.0" />
+  </ItemGroup>
+  <!-- Note: SourceLink, MinVer, and NetAnalyzers are available as PackageVersions above -->
+  <!-- Projects should reference them explicitly with <PackageReference Include="..." /> -->
+</Project>

@@ -1,0 +1,107 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Multi-targeting for broad compatibility -->
+    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    
+    <!-- Language and nullable reference types -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors>nullable</WarningsNotAsErrors>
+    
+    <!-- Assembly information -->
+    <AssemblyTitle>DTF Determinism Analyzer</AssemblyTitle>
+    <Description>Roslyn analyzer and code fixes that validate Durable Task Framework orchestration code for determinism constraints. Ensures orchestrator functions follow replay-safe patterns required for Durable Functions and Azure Functions. Detects non-deterministic operations including DateTime.Now, Guid.NewGuid(), Random, I/O operations, environment variables, static state, threading APIs, and more. Includes automatic code fixes for common violations.</Description>
+    <Product>DTF Determinism Analyzer</Product>
+    <Authors>DTF Community Contributors</Authors>
+    <Company>DTF Community</Company>
+    <Copyright>Copyright © 2025 DTF Community Contributors</Copyright>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    
+    <!-- NuGet packaging configuration -->
+    <IsPackable>true</IsPackable>
+    <PackageId>DtfDeterminismAnalyzer</PackageId>
+    <Title>DTF Determinism Analyzer - Code Analysis for Durable Functions</Title>
+    <Summary>Roslyn analyzer ensuring deterministic, replay-safe Durable Task Framework orchestration code with automatic code fixes</Summary>
+    <PackageTags>roslyn;analyzer;codefix;durable-task-framework;dtf;determinism;orchestration;azure-functions;durable-functions;replay;roslyn-analyzer;code-analysis;static-analysis;microsoft;azure;workflow;orchestrator;activity;async;await;deterministic;code-quality;best-practices;azure-webjobs;function-app</PackageTags>
+    <PackageProjectUrl>https://github.com/kokosda/dtf-determinism-analyzer</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial release with 10 determinism rules and automatic code fixes for DateTime, GUID, and Thread.Sleep violations.</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/kokosda/dtf-determinism-analyzer</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    
+    <!-- Package icon -->
+    <PackageIcon>icon.png</PackageIcon>
+    
+    <!-- Analyzer-specific packaging -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    
+    <!-- Constitution compliance -->
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Performance optimizations -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <!-- Analyzer dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Project references -->
+  <ItemGroup>
+    <ProjectReference Include="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- Include analyzer in package -->
+  <ItemGroup>
+    <None Include="$(OutputPath)netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs\$(AssemblyName).dll" Visible="false" />
+    <None Include="tools\install.ps1" Pack="true" PackagePath="tools\install.ps1" />
+    <None Include="tools\uninstall.ps1" Pack="true" PackagePath="tools\uninstall.ps1" />
+  </ItemGroup>
+
+  <!-- Include code fixes from referenced project -->
+  <ItemGroup>
+    <None Include="..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\DtfDeterminismAnalyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs\DtfDeterminismAnalyzer.CodeFixes.dll" Visible="false" />
+  </ItemGroup>
+
+  <!-- Package assets -->
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <!-- Package icon -->
+    <None Include="..\..\icon\icon.png" Pack="true" PackagePath="icon.png" />
+  </ItemGroup>
+
+  <!-- Assembly metadata -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryUrl</_Parameter1>
+      <_Parameter2>$(RepositoryUrl)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildBranch</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEBRANCH)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildCommit</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEVERSION)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+
+// PERFORMANCE TEST CODEBASE SUMMARY
+// Generated 105 files with 700 total methods
+//
+// Azure Functions Orchestrators: 50 classes × 8 methods = 400 orchestrator methods
+// Azure Functions Activities: 30 classes × 5 methods = 150 activity methods  
+// DTF Core Orchestrators: 25 classes × 6 methods = 150 orchestrator methods
+//
+// Total orchestrator methods: 550 (should trigger analyzer rules)
+// Total activity methods: 150 (should not trigger analyzer rules)
+// Expected analyzer violations: ~2200-2750 (4-5 violations per orchestrator method)

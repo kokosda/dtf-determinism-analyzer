@@ -1,0 +1,206 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Code files
+[*.{cs,csx,vb,vbx}]
+indent_style = space
+indent_size = 4
+
+# XML project files
+[*.{csproj,vbproj,vcxproj,vcxproj.filters,proj,projitems,shproj}]
+indent_style = space
+indent_size = 2
+
+# XML config files
+[*.{props,targets,ruleset,config,nuspec,resx,vsixmanifest,vsct}]
+indent_style = space
+indent_size = 2
+
+# JSON files
+[*.{json,json5,webmanifest}]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+
+# Web files
+[*.{htm,html,js,jsm,ts,tsx,css,sass,scss,less,svg,vue}]
+indent_style = space
+indent_size = 2
+
+# Batch files
+[*.{cmd,bat}]
+end_of_line = crlf
+
+# Bash files
+[*.sh]
+end_of_line = lf
+
+# C# files
+[*.cs]
+
+# .NET Code Quality Rules
+dotnet_analyzer_diagnostic.category-design.severity = warning
+dotnet_analyzer_diagnostic.category-documentation.severity = suggestion
+dotnet_analyzer_diagnostic.category-globalization.severity = warning
+dotnet_analyzer_diagnostic.category-interoperability.severity = warning
+dotnet_analyzer_diagnostic.category-maintainability.severity = warning
+dotnet_analyzer_diagnostic.category-naming.severity = warning
+dotnet_analyzer_diagnostic.category-performance.severity = warning
+dotnet_analyzer_diagnostic.category-reliability.severity = error
+dotnet_analyzer_diagnostic.category-security.severity = error
+dotnet_analyzer_diagnostic.category-style.severity = suggestion
+dotnet_analyzer_diagnostic.category-usage.severity = warning
+
+# .NET Code Style Rules
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# Organize usings
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# this. and Me. preferences
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# Language keywords vs BCL types preferences
+dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
+dotnet_style_predefined_type_for_member_access = true:suggestion
+
+# Parentheses preferences
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:suggestion
+
+# Modifier preferences
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+dotnet_style_readonly_field = true:warning
+
+# Expression-level preferences
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+
+# C# Code Style Rules
+csharp_prefer_braces = true:warning
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_prefer_static_local_functions = true:warning
+csharp_style_prefer_readonly_struct = true:warning
+
+# var preferences
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+
+# Pattern matching preferences
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_local_over_anonymous_function = true:suggestion
+
+# Null-checking preferences
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# Modifier preferences
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+
+# Code-block preferences
+csharp_prefer_braces = true:warning
+
+# Expression-level preferences
+csharp_prefer_simple_default_expression = true:suggestion
+csharp_style_deconstructed_variable_declaration = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+
+# C# Formatting Rules
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# Indentation preferences
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = flush_left
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+
+# Space preferences
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+
+# Wrapping preferences
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+
+# Nullable reference types
+dotnet_diagnostic.CS8600.severity = error  # Converting null literal or possible null value to non-nullable type
+dotnet_diagnostic.CS8601.severity = error  # Possible null reference assignment
+dotnet_diagnostic.CS8602.severity = error  # Dereference of a possibly null reference
+dotnet_diagnostic.CS8603.severity = error  # Possible null reference return
+dotnet_diagnostic.CS8604.severity = error  # Possible null reference argument
+dotnet_diagnostic.CS8618.severity = error  # Non-nullable field is uninitialized
+dotnet_diagnostic.CS8625.severity = error  # Cannot convert null literal to non-nullable reference type
+
+# DTF Determinism Analyzer Rules
+# Configure severity for each DTF determinism rule
+dotnet_diagnostic.DFA0001.severity = error  # DateTime.Now/UtcNow/Stopwatch in orchestrators
+dotnet_diagnostic.DFA0002.severity = error  # Guid.NewGuid() in orchestrators
+dotnet_diagnostic.DFA0003.severity = error  # Random without fixed seed in orchestrators
+dotnet_diagnostic.DFA0004.severity = error  # I/O or network calls in orchestrators
+dotnet_diagnostic.DFA0005.severity = error  # Environment variable reads in orchestrators
+dotnet_diagnostic.DFA0006.severity = error  # Static mutable state in orchestrators
+dotnet_diagnostic.DFA0007.severity = error  # Thread blocking in orchestrators
+dotnet_diagnostic.DFA0008.severity = error  # Non-durable async operations in orchestrators
+dotnet_diagnostic.DFA0009.severity = error  # Threading APIs in orchestrators
+dotnet_diagnostic.DFA0010.severity = error  # Bindings inside orchestrators

@@ -1,0 +1,85 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Target framework for tests - use net9.0 for testing -->
+    <TargetFramework>net9.0</TargetFramework>
+    
+    <!-- Test project configuration -->
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    
+    <!-- Language and nullable reference types -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>nullable;NU1701</WarningsNotAsErrors>
+    
+    <!-- Assembly information -->
+    <AssemblyTitle>DTF Determinism Analyzer Tests</AssemblyTitle>
+    <Description>Unit tests for DTF Determinism Analyzer using NUnit and Microsoft.CodeAnalysis.Testing</Description>
+    <Product>DTF Determinism Analyzer</Product>
+    <Copyright>Copyright © 2025</Copyright>
+    
+    <!-- Constitution compliance -->
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>embedded</DebugType>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    
+    <!-- Performance optimizations -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+  <!-- Testing framework dependencies -->
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Roslyn analyzer testing framework -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing.NUnit" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing.NUnit" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Testing.Verifiers.NUnit" />
+  </ItemGroup>
+
+  <!-- DTF framework references for test scenarios -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.Functions.Extensions" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" />
+    <PackageReference Include="DurableTask.Core" />
+  </ItemGroup>
+
+  <!-- JSON libraries for test data -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+  <!-- References to projects under test -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj" />
+    <ProjectReference Include="../../src/DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" />
+  </ItemGroup>
+
+  <!-- Assembly metadata -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryUrl</_Parameter1>
+      <_Parameter2>https://github.com/kokosda/dtf-determinism-analyzer</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildBranch</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEBRANCH)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildCommit</_Parameter1>
+      <_Parameter2>$(BUILD_SOURCEVERSION)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
