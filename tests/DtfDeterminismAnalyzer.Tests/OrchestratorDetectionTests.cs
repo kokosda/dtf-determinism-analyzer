@@ -1,6 +1,4 @@
-using System;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>;
 
@@ -23,7 +21,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task OrchestrationTriggerAttributeShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -41,7 +39,7 @@ public class TestOrchestrator
         [Test]
         public async Task ActivityTriggerAttributeShouldNotDetectAsOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -61,7 +59,7 @@ public class TestActivity
         [Test]
         public async Task HttpTriggerFunctionShouldNotDetectAsOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -84,7 +82,7 @@ public class TestHttpFunction
         [Test]
         public async Task OrchestrationTriggerWithDurableOrchestrationContextBaseShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -102,7 +100,7 @@ public class TestOrchestrator
         [Test]
         public async Task MultipleParametersWithOrchestrationTriggerShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.Extensions.Logging;
 
 public class TestOrchestrator
@@ -125,7 +123,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticMethodWithOrchestrationTriggerShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public static class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -143,7 +141,7 @@ public static class TestOrchestrator
         [Test]
         public async Task OrchestrationTriggerWithReturnValueShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -162,7 +160,7 @@ public class TestOrchestrator
         [Test]
         public async Task FunctionNameWithoutOrchestrationTriggerShouldNotDetectAsOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -184,7 +182,7 @@ public class TestFunction
         [Test]
         public async Task OrchestrationTriggerParameterWithoutFunctionNameShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     // Even without FunctionName, OrchestrationTrigger parameter should trigger detection
@@ -202,7 +200,7 @@ public class TestOrchestrator
         [Test]
         public async Task NestedClassWithOrchestrationTriggerShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class OuterClass
 {
     public class TestOrchestrator
@@ -223,7 +221,7 @@ public class OuterClass
         [Test]
         public async Task MultipleOrchestratorsInSameClassShouldDetectAll()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrators
 {
     [FunctionName(""Orchestrator1"")]
@@ -255,7 +253,7 @@ public class TestOrchestrators
         [Test]
         public async Task OrchestrationTriggerWithCustomContextInterfaceShouldDetectOrchestrator()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public interface ICustomOrchestrationContext : IDurableOrchestrationContext
 {
     // Custom orchestration context interface

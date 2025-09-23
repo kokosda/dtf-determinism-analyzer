@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -23,7 +22,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task StaticFieldWriteInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static string _sharedState = ""initial"";
@@ -36,7 +35,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -46,7 +45,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticFieldReadMutableInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static string _sharedState = ""initial"";
@@ -59,7 +58,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -69,7 +68,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticPropertyWriteInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static string SharedValue { get; set; } = ""initial"";
@@ -82,7 +81,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -92,7 +91,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticCollectionModificationInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
 
 public class TestOrchestrator
@@ -108,7 +107,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -118,7 +117,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticReadonlyConstInOrchestratorShouldNotReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly string ReadOnlyValue = ""constant"";
@@ -140,7 +139,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticImmutableCollectionInOrchestratorShouldNotReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
 using System.Linq;
 
@@ -163,7 +162,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticFieldInActivityFunctionShouldNotReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     private static string _sharedState = ""initial"";
@@ -183,7 +182,7 @@ public class TestActivity
         [Test]
         public async Task StaticFieldInRegularClassShouldNotReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class StatefulService
 {
     private static int _counter = 0;
@@ -201,7 +200,7 @@ public class StatefulService
         [Test]
         public async Task MultipleStaticAccessInOrchestratorShouldReportMultipleDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static string _state1 = ""initial1"";
@@ -217,7 +216,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0006").WithLocation(0).WithMessage("Static state may change across replays."),
                 VerifyCS.Diagnostic("DFA0006").WithLocation(1).WithMessage("Static state may change across replays.")
@@ -229,7 +228,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticAccessInNestedMethodInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static string _sharedState = ""initial"";
@@ -248,7 +247,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -258,7 +257,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticDictionaryModificationInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
 
 public class TestOrchestrator
@@ -274,7 +273,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 
@@ -284,7 +283,7 @@ public class TestOrchestrator
         [Test]
         public async Task StaticLazyAccessInOrchestratorShouldReportDFA0006()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly Lazy<string> _lazyValue = new Lazy<string>(() => DateTime.Now.ToString());
@@ -298,7 +297,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0006")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
                 .WithLocation(0)
                 .WithMessage("Static state may change across replays.");
 

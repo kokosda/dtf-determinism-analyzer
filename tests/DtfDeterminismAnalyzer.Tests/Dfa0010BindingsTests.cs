@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -25,7 +24,7 @@ using Microsoft.Extensions.Logging;
         [Test]
         public async Task BlobTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -40,7 +39,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -50,7 +49,7 @@ public class TestOrchestrator
         [Test]
         public async Task QueueTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -63,7 +62,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -73,7 +72,7 @@ public class TestOrchestrator
         [Test]
         public async Task ServiceBusTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -86,7 +85,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -96,7 +95,7 @@ public class TestOrchestrator
         [Test]
         public async Task CosmosDBTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -109,7 +108,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -119,7 +118,7 @@ public class TestOrchestrator
         [Test]
         public async Task HttpTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -136,7 +135,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -146,7 +145,7 @@ public class TestOrchestrator
         [Test]
         public async Task TableBindingInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -160,7 +159,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -170,7 +169,7 @@ public class TestOrchestrator
         [Test]
         public async Task ILoggerInOrchestratorShouldNotReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -190,7 +189,7 @@ public class TestOrchestrator
         [Test]
         public async Task ActivityTriggerInActivityFunctionShouldNotReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -213,7 +212,7 @@ public class TestActivity
         [Test]
         public async Task MultipleBindingsInOrchestratorShouldReportMultipleDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -232,7 +231,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0010").WithLocation(0).WithMessage("Direct binding usage detected in orchestrator."),
                 VerifyCS.Diagnostic("DFA0010").WithLocation(1).WithMessage("Direct binding usage detected in orchestrator."),
@@ -245,7 +244,7 @@ public class TestOrchestrator
         [Test]
         public async Task CustomBindingInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -263,7 +262,7 @@ public class CustomBindingAttribute : Attribute
     public CustomBindingAttribute(string config) { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -273,7 +272,7 @@ public class CustomBindingAttribute : Attribute
         [Test]
         public async Task EventHubTriggerInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -286,7 +285,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -296,7 +295,7 @@ public class TestOrchestrator
         [Test]
         public async Task SignalRBindingInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -321,7 +320,7 @@ public class SignalRMessage
     public object[] Arguments { get; set; }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 
@@ -331,7 +330,7 @@ public class SignalRMessage
         [Test]
         public async Task SqlBindingInOrchestratorShouldReportDFA0010()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -350,7 +349,7 @@ public class SqlAttribute : Attribute
     public SqlAttribute(string commandText, string connectionStringSetting) { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0010")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
                 .WithLocation(0)
                 .WithMessage("Direct binding usage detected in orchestrator.");
 

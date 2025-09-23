@@ -15,37 +15,37 @@ namespace DtfDeterminismAnalyzer.Utils
         /// <summary>
         /// Known orchestration trigger attribute names that identify orchestrator functions.
         /// </summary>
-        private static readonly string[] OrchestrationTriggerAttributeNames = 
-        {
+        private static readonly string[] OrchestrationTriggerAttributeNames =
+        [
             "OrchestrationTrigger",
             "OrchestrationTriggerAttribute",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.OrchestrationTrigger",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.OrchestrationTriggerAttribute"
-        };
+        ];
 
         /// <summary>
         /// Known orchestration context types that indicate an orchestrator function.
         /// </summary>
-        private static readonly string[] OrchestrationContextTypeNames = 
-        {
+        private static readonly string[] OrchestrationContextTypeNames =
+        [
             "IDurableOrchestrationContext",
             "DurableOrchestrationContextBase",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.IDurableOrchestrationContext",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.DurableOrchestrationContextBase",
             "TaskOrchestrationContext",
             "Microsoft.DurableTask.TaskOrchestrationContext"
-        };
+        ];
 
         /// <summary>
         /// Known activity trigger attribute names that identify activity functions (not orchestrators).
         /// </summary>
-        private static readonly string[] ActivityTriggerAttributeNames = 
-        {
+        private static readonly string[] ActivityTriggerAttributeNames =
+        [
             "ActivityTrigger",
             "ActivityTriggerAttribute",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.ActivityTrigger",
             "Microsoft.Azure.WebJobs.Extensions.DurableTask.ActivityTriggerAttribute"
-        };
+        ];
 
         /// <summary>
         /// Determines if a method declaration represents an orchestrator function.
@@ -58,10 +58,12 @@ namespace DtfDeterminismAnalyzer.Utils
         public static bool IsOrchestratorMethod(MethodDeclarationSyntax methodDeclaration, SemanticModel semanticModel)
         {
             if (methodDeclaration?.ParameterList?.Parameters == null)
+            {
                 return false;
+            }
 
             // Check each parameter for orchestration trigger attribute or orchestration context type
-            foreach (var parameter in methodDeclaration.ParameterList.Parameters)
+            foreach (ParameterSyntax parameter in methodDeclaration.ParameterList.Parameters)
             {
                 // Check for [OrchestrationTrigger] attribute (Azure Functions)
                 if (HasOrchestrationTriggerAttribute(parameter, semanticModel))
@@ -89,10 +91,12 @@ namespace DtfDeterminismAnalyzer.Utils
         public static bool IsActivityMethod(MethodDeclarationSyntax methodDeclaration, SemanticModel semanticModel)
         {
             if (methodDeclaration?.ParameterList?.Parameters == null)
+            {
                 return false;
+            }
 
             // Check each parameter for activity trigger attribute
-            foreach (var parameter in methodDeclaration.ParameterList.Parameters)
+            foreach (ParameterSyntax parameter in methodDeclaration.ParameterList.Parameters)
             {
                 if (HasActivityTriggerAttribute(parameter, semanticModel))
                 {
@@ -112,10 +116,12 @@ namespace DtfDeterminismAnalyzer.Utils
         public static ParameterSyntax? GetOrchestrationContextParameter(MethodDeclarationSyntax methodDeclaration, SemanticModel semanticModel)
         {
             if (methodDeclaration?.ParameterList?.Parameters == null)
+            {
                 return null;
+            }
 
             // Find the parameter with OrchestrationTrigger attribute or orchestration context type
-            foreach (var parameter in methodDeclaration.ParameterList.Parameters)
+            foreach (ParameterSyntax parameter in methodDeclaration.ParameterList.Parameters)
             {
                 if (HasOrchestrationTriggerAttribute(parameter, semanticModel) ||
                     HasOrchestrationContextType(parameter, semanticModel))
@@ -144,12 +150,12 @@ namespace DtfDeterminismAnalyzer.Utils
 
             // For helper methods within orchestrator classes, we need to check if they're called from orchestrator methods
             // This is a simplified check - in a full implementation, you might want call graph analysis
-            var containingClass = methodDeclaration.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            ClassDeclarationSyntax? containingClass = methodDeclaration.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
             {
                 // Check if the containing class has any orchestrator methods
-                var methods = containingClass.DescendantNodes().OfType<MethodDeclarationSyntax>();
-                foreach (var method in methods)
+                System.Collections.Generic.IEnumerable<MethodDeclarationSyntax> methods = containingClass.DescendantNodes().OfType<MethodDeclarationSyntax>();
+                foreach (MethodDeclarationSyntax method in methods)
                 {
                     if (IsOrchestratorMethod(method, semanticModel))
                     {
@@ -173,11 +179,8 @@ namespace DtfDeterminismAnalyzer.Utils
         public static bool IsNodeWithinOrchestratorMethod(SyntaxNode node, SemanticModel semanticModel)
         {
             // Walk up the syntax tree to find the containing method
-            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (containingMethod == null)
-                return false;
-
-            return IsWithinOrchestratorContext(containingMethod, semanticModel);
+            MethodDeclarationSyntax? containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            return containingMethod == null ? false : IsWithinOrchestratorContext(containingMethod, semanticModel);
         }
 
         /// <summary>
@@ -189,15 +192,14 @@ namespace DtfDeterminismAnalyzer.Utils
         private static bool HasOrchestrationContextType(ParameterSyntax parameter, SemanticModel semanticModel)
         {
             if (parameter.Type == null)
+            {
                 return false;
+            }
 
-            var typeInfo = semanticModel.GetTypeInfo(parameter.Type);
-            var typeSymbol = typeInfo.Type;
+            TypeInfo typeInfo = semanticModel.GetTypeInfo(parameter.Type);
+            ITypeSymbol? typeSymbol = typeInfo.Type;
 
-            if (typeSymbol == null)
-                return false;
-
-            return IsOrchestrationContextType(typeSymbol);
+            return typeSymbol == null ? false : IsOrchestrationContextType(typeSymbol);
         }
 
         /// <summary>
@@ -209,20 +211,22 @@ namespace DtfDeterminismAnalyzer.Utils
         private static bool HasOrchestrationTriggerAttribute(ParameterSyntax parameter, SemanticModel semanticModel)
         {
             if (parameter.AttributeLists.Count == 0)
-                return false;
-
-            foreach (var attributeList in parameter.AttributeLists)
             {
-                foreach (var attribute in attributeList.Attributes)
+                return false;
+            }
+
+            foreach (AttributeListSyntax attributeList in parameter.AttributeLists)
+            {
+                foreach (AttributeSyntax attribute in attributeList.Attributes)
                 {
-                    var symbolInfo = semanticModel.GetSymbolInfo(attribute);
+                    SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(attribute);
                     if (symbolInfo.Symbol is IMethodSymbol constructor)
                     {
-                        var attributeType = constructor.ContainingType;
-                        var attributeTypeName = attributeType.ToDisplayString();
-                        
+                        INamedTypeSymbol attributeType = constructor.ContainingType;
+                        string attributeTypeName = attributeType.ToDisplayString();
+
                         // Check both short name and full name
-                        if (OrchestrationTriggerAttributeNames.Any(name => 
+                        if (OrchestrationTriggerAttributeNames.Any(name =>
                             attributeTypeName.EndsWith(name, StringComparison.Ordinal) ||
                             attributeTypeName.Equals(name, StringComparison.Ordinal)))
                         {
@@ -232,8 +236,8 @@ namespace DtfDeterminismAnalyzer.Utils
                     else
                     {
                         // Fallback to name-based checking if symbol resolution fails
-                        var attributeName = attribute.Name.ToString();
-                        if (OrchestrationTriggerAttributeNames.Any(name => 
+                        string attributeName = attribute.Name.ToString();
+                        if (OrchestrationTriggerAttributeNames.Any(name =>
                             attributeName.Equals(name, StringComparison.Ordinal) ||
                             attributeName.Equals(name.Replace("Attribute", ""), StringComparison.Ordinal)))
                         {
@@ -255,20 +259,22 @@ namespace DtfDeterminismAnalyzer.Utils
         private static bool HasActivityTriggerAttribute(ParameterSyntax parameter, SemanticModel semanticModel)
         {
             if (parameter.AttributeLists.Count == 0)
-                return false;
-
-            foreach (var attributeList in parameter.AttributeLists)
             {
-                foreach (var attribute in attributeList.Attributes)
+                return false;
+            }
+
+            foreach (AttributeListSyntax attributeList in parameter.AttributeLists)
+            {
+                foreach (AttributeSyntax attribute in attributeList.Attributes)
                 {
-                    var symbolInfo = semanticModel.GetSymbolInfo(attribute);
+                    SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(attribute);
                     if (symbolInfo.Symbol is IMethodSymbol constructor)
                     {
-                        var attributeType = constructor.ContainingType;
-                        var attributeTypeName = attributeType.ToDisplayString();
-                        
+                        INamedTypeSymbol attributeType = constructor.ContainingType;
+                        string attributeTypeName = attributeType.ToDisplayString();
+
                         // Check both short name and full name
-                        if (ActivityTriggerAttributeNames.Any(name => 
+                        if (ActivityTriggerAttributeNames.Any(name =>
                             attributeTypeName.EndsWith(name, StringComparison.Ordinal) ||
                             attributeTypeName.Equals(name, StringComparison.Ordinal)))
                         {
@@ -278,8 +284,8 @@ namespace DtfDeterminismAnalyzer.Utils
                     else
                     {
                         // Fallback to name-based checking if symbol resolution fails
-                        var attributeName = attribute.Name.ToString();
-                        if (ActivityTriggerAttributeNames.Any(name => 
+                        string attributeName = attribute.Name.ToString();
+                        if (ActivityTriggerAttributeNames.Any(name =>
                             attributeName.Equals(name, StringComparison.Ordinal) ||
                             attributeName.Equals(name.Replace("Attribute", ""), StringComparison.Ordinal)))
                         {
@@ -300,12 +306,14 @@ namespace DtfDeterminismAnalyzer.Utils
         public static bool IsOrchestrationContextType(ITypeSymbol typeSymbol)
         {
             if (typeSymbol == null)
+            {
                 return false;
+            }
 
-            var typeName = typeSymbol.ToDisplayString();
-            
+            string typeName = typeSymbol.ToDisplayString();
+
             // Check if it's a known orchestration context type
-            if (OrchestrationContextTypeNames.Any(name => 
+            if (OrchestrationContextTypeNames.Any(name =>
                 typeName.Equals(name, StringComparison.Ordinal) ||
                 typeName.EndsWith(name, StringComparison.Ordinal)))
             {
@@ -313,8 +321,8 @@ namespace DtfDeterminismAnalyzer.Utils
             }
 
             // Check if it implements IDurableOrchestrationContext
-            return typeSymbol.AllInterfaces.Any(i => 
-                OrchestrationContextTypeNames.Any(name => 
+            return typeSymbol.AllInterfaces.Any(i =>
+                OrchestrationContextTypeNames.Any(name =>
                     i.ToDisplayString().Equals(name, StringComparison.Ordinal) ||
                     i.ToDisplayString().EndsWith(name, StringComparison.Ordinal)));
         }

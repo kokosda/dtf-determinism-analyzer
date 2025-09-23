@@ -28,7 +28,10 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <summary>
         /// Gets the fix-all provider that can fix all instances of this diagnostic at once.
         /// </summary>
-        public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+        public sealed override FixAllProvider GetFixAllProvider()
+        {
+            return WellKnownFixAllProviders.BatchFixer;
+        }
 
         /// <summary>
         /// Registers code fixes for the specified diagnostic reports.
@@ -36,20 +39,23 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <param name="context">Context that contains the diagnostics to fix and allows registration of code actions.</param>
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             if (root == null)
-                return;
-
-            foreach (var diagnostic in context.Diagnostics.Where(d => FixableDiagnosticIds.Contains(d.Id)))
             {
-                var diagnosticSpan = diagnostic.Location.SourceSpan;
-                var memberAccess = root.FindNode(diagnosticSpan) as MemberAccessExpressionSyntax;
-                if (memberAccess == null)
+                return;
+            }
+
+            foreach (Diagnostic? diagnostic in context.Diagnostics.Where(d => FixableDiagnosticIds.Contains(d.Id)))
+            {
+                Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
+                if (root.FindNode(diagnosticSpan) is not MemberAccessExpressionSyntax memberAccess)
+                {
                     continue;
+                }
 
                 // Determine the type of time API being used and create appropriate fix
-                var memberName = memberAccess.Name.Identifier.ValueText;
-                var typeName = GetTypeNameFromMemberAccess(memberAccess);
+                string memberName = memberAccess.Name.Identifier.ValueText;
+                string? typeName = GetTypeNameFromMemberAccess(memberAccess);
 
                 if (typeName == "DateTime" && (memberName == "Now" || memberName == "UtcNow" || memberName == "Today"))
                 {
@@ -65,13 +71,13 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <summary>
         /// Registers a code fix for DateTime API usage.
         /// </summary>
-        private static void RegisterDateTimeCodeFix(CodeFixContext context, Diagnostic diagnostic, SyntaxNode root, 
+        private static void RegisterDateTimeCodeFix(CodeFixContext context, Diagnostic diagnostic, SyntaxNode root,
             MemberAccessExpressionSyntax memberAccess, string memberName)
         {
-            var title = memberName switch
+            string title = memberName switch
             {
                 "Now" => "Replace DateTime.Now with context.CurrentUtcDateTime",
-                "UtcNow" => "Replace DateTime.UtcNow with context.CurrentUtcDateTime", 
+                "UtcNow" => "Replace DateTime.UtcNow with context.CurrentUtcDateTime",
                 "Today" => "Replace DateTime.Today with context.CurrentUtcDateTime.Date",
                 _ => $"Replace DateTime.{memberName} with context.CurrentUtcDateTime"
             };
@@ -90,7 +96,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         private static void RegisterStopwatchCodeFix(CodeFixContext context, Diagnostic diagnostic, SyntaxNode root,
             MemberAccessExpressionSyntax memberAccess, string memberName)
         {
-            var title = memberName switch
+            string title = memberName switch
             {
                 "StartNew" => "Replace Stopwatch.StartNew() with durable timer pattern",
                 "Start" => "Replace Stopwatch.Start() with durable timer pattern",
@@ -109,14 +115,16 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <summary>
         /// Fixes DateTime API usage by replacing with context.CurrentUtcDateTime.
         /// </summary>
-        private static async Task<Document> FixDateTimeUsage(Document document, SyntaxNode root, 
+        private static async Task<Document> FixDateTimeUsage(Document document, SyntaxNode root,
             MemberAccessExpressionSyntax memberAccess, string memberName, CancellationToken cancellationToken)
         {
-            var orchestratorContextParameter = await FindOrchestratorContextParameter(document, memberAccess, cancellationToken);
+            string? orchestratorContextParameter = await FindOrchestratorContextParameter(document, memberAccess, cancellationToken);
             if (orchestratorContextParameter == null)
+            {
                 return document;
+            }
 
-            var replacement = memberName switch
+            MemberAccessExpressionSyntax replacement = memberName switch
             {
                 "Now" or "UtcNow" => SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
@@ -135,7 +143,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
                     SyntaxFactory.IdentifierName("CurrentUtcDateTime"))
             };
 
-            var newRoot = root.ReplaceNode(memberAccess, replacement);
+            SyntaxNode newRoot = root.ReplaceNode(memberAccess, replacement);
             return document.WithSyntaxRoot(newRoot);
         }
 
@@ -145,9 +153,11 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         private static async Task<Document> FixStopwatchUsage(Document document, SyntaxNode root,
             MemberAccessExpressionSyntax memberAccess, string memberName, CancellationToken cancellationToken)
         {
-            var orchestratorContextParameter = await FindOrchestratorContextParameter(document, memberAccess, cancellationToken);
+            string? orchestratorContextParameter = await FindOrchestratorContextParameter(document, memberAccess, cancellationToken);
             if (orchestratorContextParameter == null)
+            {
                 return document;
+            }
 
             ExpressionSyntax replacement;
 
@@ -172,7 +182,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
                     SyntaxFactory.IdentifierName("CurrentUtcDateTime"));
             }
 
-            var newRoot = root.ReplaceNode(memberAccess, replacement);
+            SyntaxNode newRoot = root.ReplaceNode(memberAccess, replacement);
             return document.WithSyntaxRoot(newRoot);
         }
 
@@ -181,26 +191,34 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// </summary>
         private static async Task<string?> FindOrchestratorContextParameter(Document document, SyntaxNode node, CancellationToken cancellationToken)
         {
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
+            SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken);
             if (semanticModel == null)
+            {
                 return null;
+            }
 
             // Find the containing method
-            var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method == null)
+            {
                 return null;
+            }
 
             // Look for a parameter with orchestration context type
-            foreach (var parameter in method.ParameterList.Parameters)
+            foreach (ParameterSyntax parameter in method.ParameterList.Parameters)
             {
                 if (parameter.Type == null)
+                {
                     continue;
+                }
 
-                var typeInfo = semanticModel.GetTypeInfo(parameter.Type, cancellationToken);
+                TypeInfo typeInfo = semanticModel.GetTypeInfo(parameter.Type, cancellationToken);
                 if (typeInfo.Type == null)
+                {
                     continue;
+                }
 
-                var typeName = typeInfo.Type.ToDisplayString();
+                string typeName = typeInfo.Type.ToDisplayString();
                 if (IsOrchestratorContextType(typeName))
                 {
                     return parameter.Identifier.ValueText;

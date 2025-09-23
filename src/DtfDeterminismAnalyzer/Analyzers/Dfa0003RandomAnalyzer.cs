@@ -1,10 +1,9 @@
 using System.Collections.Immutable;
-using System.Linq;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -18,7 +17,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <summary>
         /// Gets the diagnostic descriptors supported by this analyzer.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(DiagnosticDescriptors.RandomRule);
 
         /// <summary>
@@ -42,19 +41,23 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this object creation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(objectCreation, context.SemanticModel))
+            {
                 return;
+            }
 
             // Get type information for the object being created
-            var typeSymbol = context.SemanticModel.GetTypeInfo(objectCreation).Type;
+            ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(objectCreation).Type;
             if (typeSymbol == null)
+            {
                 return;
+            }
 
             // Check if this is a Random type
-            if (typeSymbol.Name == "Random" && 
+            if (typeSymbol.Name == "Random" &&
                 typeSymbol.ContainingNamespace?.ToDisplayString() == "System")
             {
                 // Check if the constructor has no arguments (non-deterministic)
-                if (objectCreation.ArgumentList == null || 
+                if (objectCreation.ArgumentList == null ||
                     objectCreation.ArgumentList.Arguments.Count == 0)
                 {
                     var diagnostic = Diagnostic.Create(
@@ -67,7 +70,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 else
                 {
                     // Check if the seed argument is non-deterministic (e.g., DateTime.Now.Millisecond)
-                    var firstArgument = objectCreation.ArgumentList.Arguments[0];
+                    ArgumentSyntax firstArgument = objectCreation.ArgumentList.Arguments[0];
                     if (IsNonDeterministicSeed(firstArgument, context.SemanticModel))
                     {
                         var diagnostic = Diagnostic.Create(
@@ -92,12 +95,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for DateTime.Now, DateTime.UtcNow usage in seed
             if (argument.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                var memberSymbol = semanticModel.GetSymbolInfo(memberAccess).Symbol;
+                ISymbol? memberSymbol = semanticModel.GetSymbolInfo(memberAccess).Symbol;
                 if (memberSymbol?.ContainingType?.Name == "DateTime" &&
                     memberSymbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System")
                 {
-                    var memberName = memberSymbol.Name;
-                    if (memberName == "Now" || memberName == "UtcNow" || memberName == "Today")
+                    string memberName = memberSymbol.Name;
+                    if (memberName is "Now" or "UtcNow" or "Today")
                     {
                         return true;
                     }
@@ -108,12 +111,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
             if (argument.Expression is MemberAccessExpressionSyntax chainedAccess &&
                 chainedAccess.Expression is MemberAccessExpressionSyntax parentAccess)
             {
-                var parentSymbol = semanticModel.GetSymbolInfo(parentAccess).Symbol;
+                ISymbol? parentSymbol = semanticModel.GetSymbolInfo(parentAccess).Symbol;
                 if (parentSymbol?.ContainingType?.Name == "DateTime" &&
                     parentSymbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System")
                 {
-                    var parentName = parentSymbol.Name;
-                    if (parentName == "Now" || parentName == "UtcNow" || parentName == "Today")
+                    string parentName = parentSymbol.Name;
+                    if (parentName is "Now" or "UtcNow" or "Today")
                     {
                         return true;
                     }

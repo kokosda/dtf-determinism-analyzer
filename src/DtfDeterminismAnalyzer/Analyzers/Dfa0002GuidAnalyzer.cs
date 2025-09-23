@@ -1,10 +1,9 @@
 using System.Collections.Immutable;
-using System.Linq;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -18,7 +17,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <summary>
         /// Gets the diagnostic descriptors supported by this analyzer.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(DiagnosticDescriptors.GuidRule);
 
         /// <summary>
@@ -42,12 +41,14 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this invocation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
             // Check for Guid.NewGuid() calls
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+                ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
                 if (memberSymbol is IMethodSymbol methodSymbol &&
                     methodSymbol.Name == "NewGuid" &&
                     methodSymbol.ContainingType?.Name == "Guid" &&

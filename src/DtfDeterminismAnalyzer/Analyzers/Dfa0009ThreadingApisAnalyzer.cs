@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using System.Linq;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -19,28 +19,28 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <summary>
         /// Threading API types that should be flagged in orchestrators.
         /// </summary>
-        private static readonly string[] ProblematicThreadingTypes = 
-        {
-            "Thread", "ThreadPool", "Parallel", "Monitor", "Mutex", "AutoResetEvent", 
+        private static readonly string[] ProblematicThreadingTypes =
+        [
+            "Thread", "ThreadPool", "Parallel", "Monitor", "Mutex", "AutoResetEvent",
             "ManualResetEvent", "ReaderWriterLock", "ReaderWriterLockSlim", "SynchronizationContext",
             "Interlocked", "SpinLock", "SpinWait", "Barrier", "CountdownEvent", "SemaphoreSlim", "Semaphore"
-        };
+        ];
 
         /// <summary>
         /// Threading API method names that should be flagged.
         /// </summary>
-        private static readonly string[] ProblematicThreadingMethods = 
-        {
-            "Start", "QueueUserWorkItem", "ForEach", "For", "Enter", "Exit", "WaitOne", 
-            "ReleaseMutex", "AcquireReaderLock", "AcquireWriterLock", "ReleaseReaderLock", 
-            "ReleaseWriterLock", "Post", "Send", "Exchange", "CompareExchange", "Increment", 
+        private static readonly string[] ProblematicThreadingMethods =
+        [
+            "Start", "QueueUserWorkItem", "ForEach", "For", "Enter", "Exit", "WaitOne",
+            "ReleaseMutex", "AcquireReaderLock", "AcquireWriterLock", "ReleaseReaderLock",
+            "ReleaseWriterLock", "Post", "Send", "Exchange", "CompareExchange", "Increment",
             "Decrement", "Add", "Register", "Set", "Reset", "Wait", "WaitAll", "WaitAny"
-        };
+        ];
 
         /// <summary>
         /// Gets the diagnostic descriptors supported by this analyzer.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(DiagnosticDescriptors.ThreadingApisRule);
 
         /// <summary>
@@ -66,11 +66,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this invocation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+                ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
                 if (memberSymbol != null && IsThreadingApiCall(memberSymbol))
                 {
                     var diagnostic = Diagnostic.Create(
@@ -93,7 +95,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this lock statement is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(lockStatement, context.SemanticModel))
+            {
                 return;
+            }
 
             var diagnostic = Diagnostic.Create(
                 DiagnosticDescriptors.ThreadingApisRule,
@@ -113,12 +117,16 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this object creation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(objectCreation, context.SemanticModel))
+            {
                 return;
+            }
 
             // Get type information for the object being created
-            var typeSymbol = context.SemanticModel.GetTypeInfo(objectCreation).Type;
+            ITypeSymbol? typeSymbol = context.SemanticModel.GetTypeInfo(objectCreation).Type;
             if (typeSymbol == null)
+            {
                 return;
+            }
 
             // Check if this is a threading-related type
             if (IsThreadingType(typeSymbol))
@@ -139,14 +147,16 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <returns>True if the symbol represents a threading API call.</returns>
         private static bool IsThreadingApiCall(ISymbol symbol)
         {
-            var containingType = symbol.ContainingType;
+            INamedTypeSymbol containingType = symbol.ContainingType;
             if (containingType == null)
+            {
                 return false;
+            }
 
             // Check if it's a method from a threading type
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
-            
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+
             if ((namespaceName == "System.Threading" || namespaceName == "System.Threading.Tasks") &&
                 ProblematicThreadingTypes.Contains(typeName) &&
                 ProblematicThreadingMethods.Contains(symbol.Name))
@@ -155,14 +165,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Special case for CancellationToken.Register (in System namespace)
-            if (containingType.Name == "CancellationToken" &&
+            return containingType.Name == "CancellationToken" &&
                 containingType.ContainingNamespace?.ToDisplayString() == "System.Threading" &&
-                symbol.Name == "Register")
-            {
-                return true;
-            }
-
-            return false;
+                symbol.Name == "Register";
         }
 
         /// <summary>
@@ -172,9 +177,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <returns>True if the type is threading-related.</returns>
         private static bool IsThreadingType(ITypeSymbol typeSymbol)
         {
-            var typeName = typeSymbol.Name;
-            var namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
-            
+            string typeName = typeSymbol.Name;
+            string? namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
+
             return (namespaceName == "System.Threading" || namespaceName == "System.Threading.Tasks") &&
                    ProblematicThreadingTypes.Contains(typeName);
         }

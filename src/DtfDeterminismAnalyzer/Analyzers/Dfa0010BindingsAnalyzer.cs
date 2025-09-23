@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -16,7 +16,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class Dfa0010BindingsAnalyzer : DiagnosticAnalyzer
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(DiagnosticDescriptors.BindingsRule);
 
         public override void Initialize(AnalysisContext context)
@@ -31,19 +31,23 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeParameter(SyntaxNodeAnalysisContext context)
         {
             var parameter = (ParameterSyntax)context.Node;
-            
+
             // Only analyze parameters within orchestrator methods
-            var method = parameter.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = parameter.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method == null)
+            {
                 return;
+            }
 
             if (!OrchestratorContextDetector.IsOrchestratorMethod(method, context.SemanticModel))
+            {
                 return;
+            }
 
             // Check if parameter has binding attributes
-            foreach (var attributeList in parameter.AttributeLists)
+            foreach (AttributeListSyntax attributeList in parameter.AttributeLists)
             {
-                foreach (var attribute in attributeList.Attributes)
+                foreach (AttributeSyntax attribute in attributeList.Attributes)
                 {
                     if (IsBindingAttribute(attribute, context.SemanticModel))
                     {
@@ -59,18 +63,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+            {
                 return;
+            }
 
-            var containingType = methodSymbol.ContainingType;
+            INamedTypeSymbol containingType = methodSymbol.ContainingType;
             if (containingType == null)
+            {
                 return;
+            }
 
             // Check for direct binding-related API calls
             if (IsBindingApiCall(containingType, methodSymbol.Name))
@@ -85,18 +95,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeIdentifierName(SyntaxNodeAnalysisContext context)
         {
             var identifier = (IdentifierNameSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(identifier, context.SemanticModel))
+            {
                 return;
+            }
 
             // Skip if this identifier is part of a member access (handled separately)
             if (identifier.Parent is MemberAccessExpressionSyntax)
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(identifier);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(identifier);
             if (symbolInfo.Symbol is not IParameterSymbol parameterSymbol)
+            {
                 return;
+            }
 
             // Check if this parameter has binding attributes
             if (HasBindingAttributes(parameterSymbol))
@@ -110,13 +126,15 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsBindingAttribute(AttributeSyntax attribute, SemanticModel semanticModel)
         {
-            var symbolInfo = semanticModel.GetSymbolInfo(attribute);
+            SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(attribute);
             if (symbolInfo.Symbol is not IMethodSymbol attributeConstructor)
+            {
                 return false;
+            }
 
-            var attributeClass = attributeConstructor.ContainingType;
-            var attributeName = attributeClass?.Name;
-            var namespaceName = attributeClass?.ContainingNamespace?.ToDisplayString();
+            INamedTypeSymbol? attributeClass = attributeConstructor.ContainingType;
+            string? attributeName = attributeClass?.Name;
+            string? namespaceName = attributeClass?.ContainingNamespace?.ToDisplayString();
 
             // Check for Azure Functions binding attributes
             if (namespaceName == "Microsoft.Azure.WebJobs")
@@ -124,25 +142,25 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return attributeName is
                     // Storage bindings
                     "BlobAttribute" or "QueueAttribute" or "TableAttribute" or
-                    
+
                     // HTTP bindings
                     "HttpTriggerAttribute" or
-                    
+
                     // Service Bus bindings
                     "ServiceBusAttribute" or "ServiceBusTriggerAttribute" or
-                    
+
                     // Event Hub bindings
                     "EventHubAttribute" or "EventHubTriggerAttribute" or
-                    
+
                     // Cosmos DB bindings
                     "CosmosDBAttribute" or "CosmosDBTriggerAttribute" or
-                    
+
                     // Timer bindings
                     "TimerTriggerAttribute" or
-                    
+
                     // Generic bindings
                     "BindingAttribute" or
-                    
+
                     // Other common bindings
                     "SendGridAttribute" or "TwilioSmsAttribute" or "NotificationHubAttribute" or
                     "MobileTableAttribute" or "DocumentDBAttribute" or
@@ -151,15 +169,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Check for other binding frameworks (if applicable)
-            if (namespaceName?.StartsWith("Microsoft.Azure.Functions", StringComparison.Ordinal) == true ||
-                namespaceName?.StartsWith("Microsoft.Azure.WebJobs", StringComparison.Ordinal) == true)
-            {
-                return attributeName?.EndsWith("Attribute", StringComparison.Ordinal) == true &&
+            return namespaceName?.StartsWith("Microsoft.Azure.Functions", StringComparison.Ordinal) == true ||
+                namespaceName?.StartsWith("Microsoft.Azure.WebJobs", StringComparison.Ordinal) == true
+                ? attributeName?.EndsWith("Attribute", StringComparison.Ordinal) == true &&
                        (attributeName.Contains("Trigger") || attributeName.Contains("Binding") ||
-                        IsKnownBindingAttributeName(attributeName));
-            }
-
-            return false;
+                        IsKnownBindingAttributeName(attributeName))
+                : false;
         }
 
         private static bool IsKnownBindingAttributeName(string attributeName)
@@ -176,11 +191,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             return parameter.GetAttributes().Any(attr =>
             {
-                var attributeClass = attr.AttributeClass;
-                var attributeName = attributeClass?.Name;
-                var namespaceName = attributeClass?.ContainingNamespace?.ToDisplayString();
+                INamedTypeSymbol? attributeClass = attr.AttributeClass;
+                string? attributeName = attributeClass?.Name;
+                string? namespaceName = attributeClass?.ContainingNamespace?.ToDisplayString();
 
-                return namespaceName == "Microsoft.Azure.WebJobs" && 
+                return namespaceName == "Microsoft.Azure.WebJobs" &&
                        attributeName != null &&
                        IsKnownBindingAttributeName(attributeName);
             });
@@ -188,8 +203,8 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsBindingApiCall(INamedTypeSymbol containingType, string methodName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // Azure Functions specific APIs that shouldn't be called directly in orchestrators
             if (namespaceName?.StartsWith("Microsoft.Azure.WebJobs", StringComparison.Ordinal) == true)
@@ -212,8 +227,8 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 namespaceName?.StartsWith("Microsoft.Azure.Storage", StringComparison.Ordinal) == true)
             {
                 // Any direct storage operations
-                return typeName is "BlobClient" or "BlobContainerClient" or "QueueClient" or 
-                       "TableClient" or "CloudBlob" or "CloudBlobContainer" or 
+                return typeName is "BlobClient" or "BlobContainerClient" or "QueueClient" or
+                       "TableClient" or "CloudBlob" or "CloudBlobContainer" or
                        "CloudQueue" or "CloudTable";
             }
 
@@ -235,14 +250,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Cosmos DB client direct usage
-            if (namespaceName?.StartsWith("Microsoft.Azure.Cosmos", StringComparison.Ordinal) == true ||
-                namespaceName?.StartsWith("Microsoft.Azure.Documents", StringComparison.Ordinal) == true)
-            {
-                return typeName is "CosmosClient" or "Database" or "Container" or
-                       "DocumentClient" or "IDocumentClient";
-            }
-
-            return false;
+            return namespaceName?.StartsWith("Microsoft.Azure.Cosmos", StringComparison.Ordinal) == true ||
+                namespaceName?.StartsWith("Microsoft.Azure.Documents", StringComparison.Ordinal) == true
+                ? typeName is "CosmosClient" or "Database" or "Container" or
+                       "DocumentClient" or "IDocumentClient"
+                : false;
         }
 
         private static string GetInvocationDisplayName(InvocationExpressionSyntax invocation)

@@ -1,11 +1,10 @@
 using System;
+using System.Collections.Immutable;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -16,7 +15,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class Dfa0008NonDurableAsyncAnalyzer : DiagnosticAnalyzer
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(DiagnosticDescriptors.NonDurableAsyncRule);
 
         public override void Initialize(AnalysisContext context)
@@ -30,14 +29,16 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeAwaitExpression(SyntaxNodeAnalysisContext context)
         {
             var awaitExpression = (AwaitExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(awaitExpression, context.SemanticModel))
+            {
                 return;
+            }
 
             // Get the awaited expression
-            var awaitedExpression = awaitExpression.Expression;
-            
+            ExpressionSyntax awaitedExpression = awaitExpression.Expression;
+
             // Check if this is a durable operation
             if (!IsDurableAsyncOperation(awaitedExpression, context.SemanticModel))
             {
@@ -51,18 +52,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
             // Only analyze if this invocation is being awaited
             if (invocation.Parent is not AwaitExpressionSyntax)
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+            {
                 return;
+            }
 
             // Check if this is a non-durable async operation
             if (IsNonDurableAsyncMethod(methodSymbol))
@@ -79,7 +86,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check if the expression is a method invocation
             if (expression is InvocationExpressionSyntax invocation)
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(invocation);
+                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(invocation);
                 if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
                 {
                     return IsDurableMethod(methodSymbol);
@@ -89,7 +96,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check if the expression is a member access (property)
             if (expression is MemberAccessExpressionSyntax memberAccess)
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
+                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
                 if (symbolInfo.Symbol is IPropertySymbol propertySymbol)
                 {
                     return IsDurableProperty(propertySymbol);
@@ -103,15 +110,15 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsDurableMethod(IMethodSymbol methodSymbol)
         {
-            var containingType = methodSymbol.ContainingType;
-            var typeName = containingType?.Name;
-            var namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
+            INamedTypeSymbol? containingType = methodSymbol.ContainingType;
+            string? typeName = containingType?.Name;
+            string? namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
 
             // Durable Functions context methods are considered durable
             if (typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext" or "IDurableActivityContext" or "DurableActivityContext")
             {
-                return methodSymbol.Name is 
-                    "CallActivityAsync" or "CallActivityWithRetryAsync" or 
+                return methodSymbol.Name is
+                    "CallActivityAsync" or "CallActivityWithRetryAsync" or
                     "CallSubOrchestratorAsync" or "CallSubOrchestratorWithRetryAsync" or
                     "CreateTimer" or "WaitForExternalEvent" or
                     "CallEntityAsync" or "CallHttpAsync";
@@ -130,25 +137,22 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsDurableProperty(IPropertySymbol propertySymbol)
         {
-            var containingType = propertySymbol.ContainingType;
-            var typeName = containingType?.Name;
+            INamedTypeSymbol containingType = propertySymbol.ContainingType;
+            string? typeName = containingType?.Name;
 
             // Durable Functions context properties are considered safe
-            if (typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext")
-            {
-                return propertySymbol.Name is 
+            return typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext"
+                ? propertySymbol.Name is
                     "CurrentUtcDateTime" or "NewGuid" or "IsReplaying" or
-                    "InstanceId" or "ParentInstanceId";
-            }
-
-            return false;
+                    "InstanceId" or "ParentInstanceId"
+                : false;
         }
 
         private static bool IsNonDurableAsyncMethod(IMethodSymbol methodSymbol)
         {
-            var containingType = methodSymbol.ContainingType;
-            var typeName = containingType?.Name;
-            var namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
+            INamedTypeSymbol? containingType = methodSymbol.ContainingType;
+            string? typeName = containingType?.Name;
+            string? namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
 
             // HTTP client async methods
             if (typeName == "HttpClient" && namespaceName == "System.Net.Http")

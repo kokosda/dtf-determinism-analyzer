@@ -1,11 +1,10 @@
 using System;
+using System.Collections.Immutable;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -16,7 +15,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class Dfa0007ThreadBlockingAnalyzer : DiagnosticAnalyzer
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(DiagnosticDescriptors.ThreadBlockingRule);
 
         public override void Initialize(AnalysisContext context)
@@ -30,18 +29,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+            {
                 return;
+            }
 
-            var containingType = methodSymbol.ContainingType;
+            INamedTypeSymbol containingType = methodSymbol.ContainingType;
             if (containingType == null)
+            {
                 return;
+            }
 
             // Check for various blocking operations
             if (IsThreadBlockingOperation(containingType, methodSymbol.Name) ||
@@ -59,18 +64,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
+            {
                 return;
+            }
 
-            var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+            ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
             if (memberSymbol == null)
+            {
                 return;
+            }
 
-            var containingType = memberSymbol.ContainingType;
+            INamedTypeSymbol containingType = memberSymbol.ContainingType;
             if (containingType == null)
+            {
                 return;
+            }
 
             // Check for blocking property access (like Task.Result)
             if (IsBlockingPropertyAccess(containingType, memberSymbol.Name, memberSymbol))
@@ -84,8 +95,8 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsThreadBlockingOperation(INamedTypeSymbol containingType, string methodName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Threading.Thread blocking operations
             if (typeName == "Thread" && namespaceName == "System.Threading")
@@ -112,18 +123,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // System.Threading.AutoResetEvent/ManualResetEvent blocking operations
-            if ((typeName is "AutoResetEvent" or "ManualResetEvent") && namespaceName == "System.Threading")
-            {
-                return methodName is "WaitOne";
-            }
-
-            return false;
+            return (typeName is "AutoResetEvent" or "ManualResetEvent") && namespaceName == "System.Threading" ? methodName is "WaitOne" : false;
         }
 
         private static bool IsBlockingTaskOperation(INamedTypeSymbol containingType, string methodName, IMethodSymbol methodSymbol)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Threading.Tasks.Task blocking operations
             if ((typeName is "Task" or "Task`1") && namespaceName == "System.Threading.Tasks")
@@ -132,32 +138,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Task.WaitAll and Task.WaitAny
-            if (typeName == "Task" && namespaceName == "System.Threading.Tasks")
-            {
-                return methodName is "WaitAll" or "WaitAny";
-            }
-
-            return false;
+            return typeName == "Task" && namespaceName == "System.Threading.Tasks" ? methodName is "WaitAll" or "WaitAny" : false;
         }
 
         private static bool IsBlockingPropertyAccess(INamedTypeSymbol containingType, string propertyName, ISymbol symbol)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // Task.Result property access (blocking)
-            if ((typeName is "Task`1") && namespaceName == "System.Threading.Tasks" && symbol is IPropertySymbol)
-            {
-                return propertyName is "Result";
-            }
-
-            return false;
+            return (typeName is "Task`1") && namespaceName == "System.Threading.Tasks" && symbol is IPropertySymbol
+                ? propertyName is "Result"
+                : false;
         }
 
         private static bool IsBlockingSyncOperation(INamedTypeSymbol containingType, string methodName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Threading.Tasks.Parallel blocking operations
             if (typeName == "Parallel" && namespaceName == "System.Threading.Tasks")
@@ -178,18 +176,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // System.Threading.Barrier blocking operations
-            if (typeName == "Barrier" && namespaceName == "System.Threading")
-            {
-                return methodName is "SignalAndWait";
-            }
-
-            return false;
+            return typeName == "Barrier" && namespaceName == "System.Threading" ? methodName is "SignalAndWait" : false;
         }
 
         private static bool IsBlockingIoOperation(INamedTypeSymbol containingType, string methodName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // Console blocking operations
             if (typeName == "Console" && namespaceName == "System")

@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -25,7 +23,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task ThreadStartInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -39,7 +37,7 @@ public class TestOrchestrator
     private void DoWork() => Thread.Sleep(1000);
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -49,7 +47,7 @@ public class TestOrchestrator
         [Test]
         public async Task ThreadPoolQueueUserWorkItemInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -62,7 +60,7 @@ public class TestOrchestrator
     private void DoWork() => Thread.Sleep(1000);
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -72,7 +70,7 @@ public class TestOrchestrator
         [Test]
         public async Task ParallelForEachInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -86,7 +84,7 @@ public class TestOrchestrator
     private void ProcessItem(string item) { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -96,7 +94,7 @@ public class TestOrchestrator
         [Test]
         public async Task ParallelForInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -109,7 +107,7 @@ public class TestOrchestrator
     private void ProcessIndex(int index) { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -119,7 +117,7 @@ public class TestOrchestrator
         [Test]
         public async Task LockStatementInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly object _lock = new object();
@@ -136,7 +134,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -146,7 +144,7 @@ public class TestOrchestrator
         [Test]
         public async Task MonitorEnterInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly object _lockObject = new object();
@@ -169,7 +167,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -179,7 +177,7 @@ public class TestOrchestrator
         [Test]
         public async Task MutexWaitOneInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly Mutex _mutex = new Mutex();
@@ -199,7 +197,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -209,7 +207,7 @@ public class TestOrchestrator
         [Test]
         public async Task ReaderWriterLockAcquireReaderLockInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly ReaderWriterLock _rwLock = new ReaderWriterLock();
@@ -229,7 +227,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -239,7 +237,7 @@ public class TestOrchestrator
         [Test]
         public async Task CancellationTokenRegisterInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -251,7 +249,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -261,7 +259,7 @@ public class TestOrchestrator
         [Test]
         public async Task AutoResetEventWaitOneInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly AutoResetEvent _event = new AutoResetEvent(false);
@@ -274,7 +272,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -284,7 +282,7 @@ public class TestOrchestrator
         [Test]
         public async Task ThreadingInActivityFunctionShouldNotReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     private static readonly object _lock = new object();
@@ -306,7 +304,7 @@ public class TestActivity
         [Test]
         public async Task MultipleThreadingAPIsInOrchestratorShouldReportMultipleDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly object _lock = new object();
@@ -327,7 +325,7 @@ public class TestOrchestrator
     private void DoWork() { }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0009").WithLocation(0).WithMessage("Threading API usage detected."),
                 VerifyCS.Diagnostic("DFA0009").WithLocation(1).WithMessage("Threading API usage detected.")
@@ -339,7 +337,7 @@ public class TestOrchestrator
         [Test]
         public async Task ThreadingAPIInNestedMethodInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -359,7 +357,7 @@ public class TestOrchestrator
     private void DoWork() { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -369,7 +367,7 @@ public class TestOrchestrator
         [Test]
         public async Task SynchronizationContextPostInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -383,7 +381,7 @@ public class TestOrchestrator
     private void DoWork() { }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 
@@ -393,7 +391,7 @@ public class TestOrchestrator
         [Test]
         public async Task InterlockedExchangeInOrchestratorShouldReportDFA0009()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static int _counter = 0;
@@ -406,7 +404,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0009")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0009")
                 .WithLocation(0)
                 .WithMessage("Threading API usage detected.");
 

@@ -27,7 +27,10 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <summary>
         /// Gets the fix-all provider that can fix all instances of this diagnostic at once.
         /// </summary>
-        public sealed override FixAllProvider GetFixAllProvider() => WellKnownFixAllProviders.BatchFixer;
+        public sealed override FixAllProvider GetFixAllProvider()
+        {
+            return WellKnownFixAllProviders.BatchFixer;
+        }
 
         /// <summary>
         /// Registers code fixes for the specified diagnostic reports.
@@ -35,22 +38,25 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// <param name="context">Context that contains the diagnostics to fix and allows registration of code actions.</param>
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
-            var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+            SyntaxNode? root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
             if (root == null)
-                return;
-
-            foreach (var diagnostic in context.Diagnostics.Where(d => FixableDiagnosticIds.Contains(d.Id)))
             {
-                var diagnosticSpan = diagnostic.Location.SourceSpan;
-                var invocation = root.FindNode(diagnosticSpan) as InvocationExpressionSyntax;
-                if (invocation == null)
+                return;
+            }
+
+            foreach (Diagnostic? diagnostic in context.Diagnostics.Where(d => FixableDiagnosticIds.Contains(d.Id)))
+            {
+                Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
+                if (root.FindNode(diagnosticSpan) is not InvocationExpressionSyntax invocation)
+                {
                     continue;
+                }
 
                 // Check if this is a Guid.NewGuid() method call
                 if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
                 {
-                    var memberName = memberAccess.Name.Identifier.ValueText;
-                    var typeName = GetTypeNameFromMemberAccess(memberAccess);
+                    string memberName = memberAccess.Name.Identifier.ValueText;
+                    string? typeName = GetTypeNameFromMemberAccess(memberAccess);
 
                     if (typeName == "Guid" && memberName == "NewGuid")
                     {
@@ -66,7 +72,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         private static void RegisterGuidNewGuidCodeFix(CodeFixContext context, Diagnostic diagnostic, SyntaxNode root,
             InvocationExpressionSyntax invocation)
         {
-            var title = "Replace Guid.NewGuid() with context.NewGuid()";
+            string title = "Replace Guid.NewGuid() with context.NewGuid()";
 
             var action = CodeAction.Create(
                 title: title,
@@ -82,19 +88,21 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         private static async Task<Document> FixGuidNewGuidUsage(Document document, SyntaxNode root,
             InvocationExpressionSyntax invocation, CancellationToken cancellationToken)
         {
-            var orchestratorContextParameter = await FindOrchestratorContextParameter(document, invocation, cancellationToken);
+            string? orchestratorContextParameter = await FindOrchestratorContextParameter(document, invocation, cancellationToken);
             if (orchestratorContextParameter == null)
+            {
                 return document;
+            }
 
             // Create the replacement: context.NewGuid()
-            var replacement = SyntaxFactory.InvocationExpression(
+            InvocationExpressionSyntax replacement = SyntaxFactory.InvocationExpression(
                 SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName(orchestratorContextParameter),
                     SyntaxFactory.IdentifierName("NewGuid")))
                 .WithArgumentList(SyntaxFactory.ArgumentList()); // NewGuid() takes no arguments
 
-            var newRoot = root.ReplaceNode(invocation, replacement);
+            SyntaxNode newRoot = root.ReplaceNode(invocation, replacement);
             return document.WithSyntaxRoot(newRoot);
         }
 
@@ -103,26 +111,34 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// </summary>
         private static async Task<string?> FindOrchestratorContextParameter(Document document, SyntaxNode node, CancellationToken cancellationToken)
         {
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
+            SemanticModel? semanticModel = await document.GetSemanticModelAsync(cancellationToken);
             if (semanticModel == null)
+            {
                 return null;
+            }
 
             // Find the containing method
-            var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method == null)
+            {
                 return null;
+            }
 
             // Look for a parameter with orchestration context type
-            foreach (var parameter in method.ParameterList.Parameters)
+            foreach (ParameterSyntax parameter in method.ParameterList.Parameters)
             {
                 if (parameter.Type == null)
+                {
                     continue;
+                }
 
-                var typeInfo = semanticModel.GetTypeInfo(parameter.Type, cancellationToken);
+                TypeInfo typeInfo = semanticModel.GetTypeInfo(parameter.Type, cancellationToken);
                 if (typeInfo.Type == null)
+                {
                     continue;
+                }
 
-                var typeName = typeInfo.Type.ToDisplayString();
+                string typeName = typeInfo.Type.ToDisplayString();
                 if (IsOrchestratorContextType(typeName))
                 {
                     return parameter.Identifier.ValueText;

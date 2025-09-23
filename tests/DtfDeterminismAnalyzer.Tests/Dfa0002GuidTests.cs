@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -23,7 +22,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task GuidNewGuidInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -34,7 +33,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 
@@ -44,7 +43,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidAssignedToVariableInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -56,7 +55,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 
@@ -66,7 +65,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidInMethodCallInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -76,7 +75,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 
@@ -86,7 +85,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidInPropertyInitializerInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -97,7 +96,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 
@@ -107,7 +106,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidInActivityFunctionShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -124,7 +123,7 @@ public class TestActivity
         [Test]
         public async Task GuidNewGuidInRegularClassShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class RegularService
 {
     public Guid GenerateId()
@@ -139,7 +138,7 @@ public class RegularService
         [Test]
         public async Task ContextNewGuidInOrchestratorShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -156,7 +155,7 @@ public class TestOrchestrator
         [Test]
         public async Task MultipleGuidNewGuidInOrchestratorShouldReportMultipleDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -170,7 +169,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0002").WithLocation(0).WithMessage("Non-deterministic GUID generated in orchestrator."),
                 VerifyCS.Diagnostic("DFA0002").WithLocation(1).WithMessage("Non-deterministic GUID generated in orchestrator."),
@@ -183,7 +182,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidInNestedMethodInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -199,7 +198,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 
@@ -209,7 +208,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidConstructorWithByteArrayInOrchestratorShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -228,7 +227,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidParseInOrchestratorShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -246,7 +245,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidEmptyInOrchestratorShouldNotReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -264,7 +263,7 @@ public class TestOrchestrator
         [Test]
         public async Task GuidNewGuidInConditionalExpressionInOrchestratorShouldReportDFA0002()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -276,7 +275,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0002")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic GUID generated in orchestrator.");
 

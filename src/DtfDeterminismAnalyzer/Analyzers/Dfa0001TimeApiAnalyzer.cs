@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using System.Linq;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -19,27 +19,27 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <summary>
         /// Non-deterministic DateTime member names that should be flagged in orchestrators.
         /// </summary>
-        private static readonly string[] ProblematicDateTimeMembers = 
-        {
+        private static readonly string[] ProblematicDateTimeMembers =
+        [
             "Now",
-            "UtcNow", 
+            "UtcNow",
             "Today"
-        };
+        ];
 
         /// <summary>
         /// Non-deterministic Stopwatch member names that should be flagged in orchestrators.
         /// </summary>
-        private static readonly string[] ProblematicStopwatchMembers = 
-        {
+        private static readonly string[] ProblematicStopwatchMembers =
+        [
             "StartNew",
             "Start",
             "GetTimestamp"
-        };
+        ];
 
         /// <summary>
         /// Gets the diagnostic descriptors supported by this analyzer.
         /// </summary>
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(DiagnosticDescriptors.TimeApiRule);
 
         /// <summary>
@@ -64,17 +64,21 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this member access is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
+            {
                 return;
+            }
 
             // Get the symbol information for the member access
-            var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+            ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
             if (memberSymbol == null)
+            {
                 return;
+            }
 
             // Check for problematic DateTime members
             if (IsDateTimeMember(memberSymbol))
             {
-                var memberName = memberSymbol.Name;
+                string memberName = memberSymbol.Name;
                 if (ProblematicDateTimeMembers.Contains(memberName))
                 {
                     var diagnostic = Diagnostic.Create(
@@ -91,7 +95,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             {
                 // For Stopwatch properties like ElapsedMilliseconds, ElapsedTicks, etc.
                 // These are non-deterministic because they depend on when the Stopwatch was started
-                var memberName = memberSymbol.Name;
+                string memberName = memberSymbol.Name;
                 if (IsStopwatchTimingProperty(memberName))
                 {
                     var diagnostic = Diagnostic.Create(
@@ -114,15 +118,17 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // Check if this invocation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
             // Check for Stopwatch static method calls like Stopwatch.StartNew()
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+                ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
                 if (memberSymbol != null && IsStopwatchMember(memberSymbol))
                 {
-                    var memberName = memberSymbol.Name;
+                    string memberName = memberSymbol.Name;
                     if (ProblematicStopwatchMembers.Contains(memberName))
                     {
                         var diagnostic = Diagnostic.Create(
@@ -138,12 +144,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for Stopwatch instance method calls like stopwatch.Start()
             if (invocation.Expression is MemberAccessExpressionSyntax instanceMemberAccess)
             {
-                var symbolInfo = context.SemanticModel.GetSymbolInfo(instanceMemberAccess);
-                if (symbolInfo.Symbol is IMethodSymbol methodSymbol && 
+                SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(instanceMemberAccess);
+                if (symbolInfo.Symbol is IMethodSymbol methodSymbol &&
                     methodSymbol.ContainingType?.Name == "Stopwatch" &&
                     methodSymbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System.Diagnostics")
                 {
-                    var methodName = methodSymbol.Name;
+                    string methodName = methodSymbol.Name;
                     if (ProblematicStopwatchMembers.Contains(methodName))
                     {
                         var diagnostic = Diagnostic.Create(
@@ -186,9 +192,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <returns>True if the member represents timing information.</returns>
         private static bool IsStopwatchTimingProperty(string memberName)
         {
-            return memberName == "ElapsedMilliseconds" || 
-                   memberName == "ElapsedTicks" || 
-                   memberName == "Elapsed";
+            return memberName is "ElapsedMilliseconds" or
+                   "ElapsedTicks" or
+                   "Elapsed";
         }
     }
 }

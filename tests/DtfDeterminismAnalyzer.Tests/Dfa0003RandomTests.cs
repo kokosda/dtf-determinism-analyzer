@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -23,7 +22,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task RandomConstructorNoSeedInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -35,7 +34,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -45,7 +44,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomSharedFieldInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly Random _random = {|#0:new Random()|};
@@ -58,7 +57,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -68,7 +67,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomNextMethodInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -80,7 +79,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -90,7 +89,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomNextDoubleMethodInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -102,7 +101,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -112,7 +111,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomNextBytesMethodInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -125,7 +124,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -135,7 +134,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomWithFixedSeedInOrchestratorShouldNotReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -154,7 +153,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomWithContextBasedSeedInOrchestratorShouldNotReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -174,7 +173,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomInActivityFunctionShouldNotReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -192,7 +191,7 @@ public class TestActivity
         [Test]
         public async Task RandomInRegularClassShouldNotReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class RandomService
 {
     private readonly Random _random = new Random();
@@ -210,7 +209,7 @@ public class RandomService
         [Test]
         public async Task MultipleRandomInOrchestratorShouldReportMultipleDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -226,7 +225,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0003").WithLocation(0).WithMessage("Non-deterministic random used in orchestrator."),
                 VerifyCS.Diagnostic("DFA0003").WithLocation(1).WithMessage("Non-deterministic random used in orchestrator.")
@@ -238,7 +237,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomInNestedMethodInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -255,7 +254,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -265,7 +264,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomSharedSeededInOrchestratorShouldNotReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly Random _random = new Random(42); // Fixed seed should be allowed
@@ -284,7 +283,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomInConditionalBranchInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -296,7 +295,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 
@@ -306,7 +305,7 @@ public class TestOrchestrator
         [Test]
         public async Task RandomWithVariableSeedInOrchestratorShouldReportDFA0003()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -320,7 +319,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0003")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic random used in orchestrator.");
 

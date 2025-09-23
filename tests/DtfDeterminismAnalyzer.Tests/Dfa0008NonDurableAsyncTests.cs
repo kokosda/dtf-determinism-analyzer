@@ -1,5 +1,3 @@
-using System;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -25,7 +23,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task TaskDelayInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -37,7 +35,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -47,7 +45,7 @@ public class TestOrchestrator
         [Test]
         public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -62,7 +60,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -72,7 +70,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskRunInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -84,7 +82,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -94,7 +92,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskFromResultInOrchestratorShouldNotReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -112,7 +110,7 @@ public class TestOrchestrator
         [Test]
         public async Task ConfigureAwaitFalseInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -124,7 +122,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -134,7 +132,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskWhenAllNonDurableTasksInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -150,7 +148,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -160,7 +158,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskWhenAllDurableTasksInOrchestratorShouldNotReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -180,7 +178,7 @@ public class TestOrchestrator
         [Test]
         public async Task DurableCreateTimerInOrchestratorShouldNotReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -199,7 +197,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskDelayInActivityFunctionShouldNotReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -217,7 +215,7 @@ public class TestActivity
         [Test]
         public async Task MultipleNonDurableOperationsInOrchestratorShouldReportMultipleDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -232,7 +230,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0008").WithLocation(0).WithMessage("Non-durable async operation detected."),
                 VerifyCS.Diagnostic("DFA0008").WithLocation(1).WithMessage("Non-durable async operation detected."),
@@ -245,7 +243,7 @@ public class TestOrchestrator
         [Test]
         public async Task NonDurableOperationInNestedMethodInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -262,7 +260,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -272,7 +270,7 @@ public class TestOrchestrator
         [Test]
         public async Task TaskYieldInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -284,7 +282,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 
@@ -294,7 +292,7 @@ public class TestOrchestrator
         [Test]
         public async Task CustomAsyncMethodInOrchestratorShouldReportDFA0008()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -314,7 +312,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0008")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
                 .WithLocation(0)
                 .WithMessage("Non-durable async operation detected.");
 

@@ -22,7 +22,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task DateTimeNowInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -33,7 +33,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -43,7 +43,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeUtcNowInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -54,7 +54,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -64,7 +64,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeTodayInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -75,7 +75,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -85,7 +85,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeOffsetNowInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -96,7 +96,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -106,7 +106,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeOffsetUtcNowInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -117,7 +117,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -127,7 +127,7 @@ public class TestOrchestrator
         [Test]
         public async Task StopwatchStartNewInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using System.Diagnostics;
 
 public class TestOrchestrator
@@ -140,7 +140,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -150,7 +150,7 @@ public class TestOrchestrator
         [Test]
         public async Task StopwatchConstructorInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 using System.Diagnostics;
 
 public class TestOrchestrator
@@ -164,7 +164,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 
@@ -174,7 +174,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeNowInActivityFunctionShouldNotReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -191,7 +191,7 @@ public class TestActivity
         [Test]
         public async Task DateTimeUtcNowInRegularClassShouldNotReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class RegularClass
 {
     public DateTime GetCurrentTime()
@@ -206,7 +206,7 @@ public class RegularClass
         [Test]
         public async Task ContextCurrentUtcDateTimeInOrchestratorShouldNotReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -223,7 +223,7 @@ public class TestOrchestrator
         [Test]
         public async Task MultipleDateTimeViolationsInOrchestratorShouldReportMultipleDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -237,7 +237,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0001").WithLocation(0).WithMessage("Non-deterministic time API used in orchestrator."),
                 VerifyCS.Diagnostic("DFA0001").WithLocation(1).WithMessage("Non-deterministic time API used in orchestrator."),
@@ -250,7 +250,7 @@ public class TestOrchestrator
         [Test]
         public async Task DateTimeNowInNestedMethodInOrchestratorShouldReportDFA0001()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -266,7 +266,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0001")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
                 .WithLocation(0)
                 .WithMessage("Non-deterministic time API used in orchestrator.");
 

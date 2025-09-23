@@ -23,7 +23,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0001: Do not use DateTime.Now/UtcNow/Stopwatch in orchestrators.
         /// Non-deterministic time APIs can cause replay inconsistencies.
         /// </summary>
-        public static readonly DiagnosticDescriptor TimeApiRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor TimeApiRule = new(
             id: "DFA0001",
             title: "Do not use DateTime.Now/UtcNow/Stopwatch in orchestrators",
             messageFormat: "Non-deterministic time API used in orchestrator",
@@ -38,7 +38,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0002: Do not use Guid.NewGuid() in orchestrators.
         /// Non-deterministic GUID generation can cause replay inconsistencies.
         /// </summary>
-        public static readonly DiagnosticDescriptor GuidRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor GuidRule = new(
             id: "DFA0002",
             title: "Do not use Guid.NewGuid() in orchestrators",
             messageFormat: "Non-deterministic GUID generated in orchestrator",
@@ -53,7 +53,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0003: Do not use Random without fixed seed in orchestrators.
         /// Non-deterministic random number generation can cause replay inconsistencies.
         /// </summary>
-        public static readonly DiagnosticDescriptor RandomRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor RandomRule = new(
             id: "DFA0003",
             title: "Do not use Random without fixed seed",
             messageFormat: "Non-deterministic random used in orchestrator",
@@ -68,7 +68,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0004: Do not perform I/O or network calls in orchestrators.
         /// Direct I/O operations are non-deterministic and break replay safety.
         /// </summary>
-        public static readonly DiagnosticDescriptor IoRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor IoRule = new(
             id: "DFA0004",
             title: "Do not perform I/O or network calls in orchestrators",
             messageFormat: "Outbound I/O detected in orchestrator",
@@ -83,7 +83,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0005: Do not read environment variables in orchestrators.
         /// Environment variables can change between executions, causing non-deterministic behavior.
         /// </summary>
-        public static readonly DiagnosticDescriptor EnvironmentRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor EnvironmentRule = new(
             id: "DFA0005",
             title: "Do not read environment variables in orchestrators",
             messageFormat: "Environment variable read is non-deterministic",
@@ -98,7 +98,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0006: Do not use static mutable state in orchestrators.
         /// Static state may change between executions and replay, causing inconsistencies.
         /// </summary>
-        public static readonly DiagnosticDescriptor StaticStateRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor StaticStateRule = new(
             id: "DFA0006",
             title: "Do not use static mutable state in orchestrators",
             messageFormat: "Static state may change across replays",
@@ -113,7 +113,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0007: Do not block threads in orchestrators.
         /// Thread-blocking operations prevent proper orchestrator scheduling and replay.
         /// </summary>
-        public static readonly DiagnosticDescriptor ThreadBlockingRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor ThreadBlockingRule = new(
             id: "DFA0007",
             title: "Do not block threads in orchestrators",
             messageFormat: "Thread-blocking call detected",
@@ -128,7 +128,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0008: Do not start non-durable async operations in orchestrators.
         /// Non-durable async operations cannot be replayed safely.
         /// </summary>
-        public static readonly DiagnosticDescriptor NonDurableAsyncRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor NonDurableAsyncRule = new(
             id: "DFA0008",
             title: "Do not start non-durable async operations",
             messageFormat: "Non-durable async operation detected",
@@ -143,7 +143,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0009: Avoid .NET threading APIs like ConfigureAwait(false) in orchestrators.
         /// Threading APIs can interfere with the orchestrator's execution context and replay model.
         /// </summary>
-        public static readonly DiagnosticDescriptor ThreadingApisRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor ThreadingApisRule = new(
             id: "DFA0009",
             title: "Avoid .NET threading APIs like ConfigureAwait(false)",
             messageFormat: "Threading API usage detected",
@@ -158,7 +158,7 @@ namespace DtfDeterminismAnalyzer
         /// DFA0010: Do not use bindings inside orchestrators.
         /// Direct Azure Functions bindings are not supported in orchestrator functions.
         /// </summary>
-        public static readonly DiagnosticDescriptor BindingsRule = new DiagnosticDescriptor(
+        public static readonly DiagnosticDescriptor BindingsRule = new(
             id: "DFA0010",
             title: "Do not use bindings inside orchestrators",
             messageFormat: "Direct binding usage detected in orchestrator",
@@ -176,8 +176,8 @@ namespace DtfDeterminismAnalyzer
         /// <returns>Array of all diagnostic descriptors.</returns>
         public static DiagnosticDescriptor[] GetAllDescriptors()
         {
-            return new[]
-            {
+            return
+            [
                 TimeApiRule,
                 GuidRule,
                 RandomRule,
@@ -188,7 +188,7 @@ namespace DtfDeterminismAnalyzer
                 NonDurableAsyncRule,
                 ThreadingApisRule,
                 BindingsRule
-            };
+            ];
         }
 
         /// <summary>

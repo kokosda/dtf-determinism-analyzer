@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -27,7 +24,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         [Test]
         public async Task FileReadAllTextInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -38,7 +35,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 
@@ -48,7 +45,7 @@ public class TestOrchestrator
         [Test]
         public async Task FileWriteAllTextInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -60,7 +57,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 
@@ -70,7 +67,7 @@ public class TestOrchestrator
         [Test]
         public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -84,7 +81,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 
@@ -94,7 +91,7 @@ public class TestOrchestrator
         [Test]
         public async Task FileStreamConstructorInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -107,7 +104,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 
@@ -117,7 +114,7 @@ public class TestOrchestrator
         [Test]
         public async Task DirectoryGetFilesInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -128,7 +125,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 
@@ -138,7 +135,7 @@ public class TestOrchestrator
         [Test]
         public async Task FileIOInActivityFunctionShouldNotReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
 {
     [FunctionName(""TestActivity"")]
@@ -156,7 +153,7 @@ public class TestActivity
         [Test]
         public async Task DurableHttpCallHttpAsyncInOrchestratorShouldNotReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -175,7 +172,7 @@ public class TestOrchestrator
         [Test]
         public async Task MultipleIOOperationsInOrchestratorShouldReportMultipleDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     private static readonly HttpClient _httpClient = new HttpClient();
@@ -190,7 +187,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = new[]
+            DiagnosticResult[] expected = new[]
             {
                 VerifyCS.Diagnostic("DFA0004").WithLocation(0).WithMessage("Outbound I/O detected in orchestrator."),
                 VerifyCS.Diagnostic("DFA0004").WithLocation(1).WithMessage("Outbound I/O detected in orchestrator.")
@@ -202,7 +199,7 @@ public class TestOrchestrator
         [Test]
         public async Task PathOperationsInOrchestratorShouldNotReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -221,7 +218,7 @@ public class TestOrchestrator
         [Test]
         public async Task IOInNestedMethodInOrchestratorShouldReportDFA0004()
         {
-            var testCode = OrchestrationTriggerUsing + @"
+            string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
     [FunctionName(""TestOrchestrator"")]
@@ -238,7 +235,7 @@ public class TestOrchestrator
     }
 }";
 
-            var expected = VerifyCS.Diagnostic("DFA0004")
+            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
                 .WithLocation(0)
                 .WithMessage("Outbound I/O detected in orchestrator.");
 

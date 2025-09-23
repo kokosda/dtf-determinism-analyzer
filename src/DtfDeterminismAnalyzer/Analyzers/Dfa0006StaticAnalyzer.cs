@@ -1,9 +1,9 @@
+using System.Collections.Immutable;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -14,7 +14,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class Dfa0006StaticAnalyzer : DiagnosticAnalyzer
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(DiagnosticDescriptors.StaticStateRule);
 
         public override void Initialize(AnalysisContext context)
@@ -29,14 +29,18 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
+            {
                 return;
+            }
 
-            var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+            ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
             if (memberSymbol == null)
+            {
                 return;
+            }
 
             // Check if this is static field or property access
             if (IsStaticMutableAccess(memberSymbol))
@@ -51,18 +55,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeIdentifierName(SyntaxNodeAnalysisContext context)
         {
             var identifier = (IdentifierNameSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(identifier, context.SemanticModel))
+            {
                 return;
+            }
 
             // Skip if this identifier is part of a member access (handled separately)
             if (identifier.Parent is MemberAccessExpressionSyntax)
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(identifier);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(identifier);
             if (symbolInfo.Symbol == null)
+            {
                 return;
+            }
 
             // Check if this is direct static field or property access
             if (IsStaticMutableAccess(symbolInfo.Symbol))
@@ -77,14 +87,18 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeAssignmentExpression(SyntaxNodeAnalysisContext context)
         {
             var assignment = (AssignmentExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(assignment, context.SemanticModel))
+            {
                 return;
+            }
 
-            var leftSymbol = context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
+            ISymbol? leftSymbol = context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
             if (leftSymbol == null)
+            {
                 return;
+            }
 
             // Check if assigning to static mutable state
             if (IsStaticMutableAccess(leftSymbol))
@@ -110,19 +124,27 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             // Must be static
             if (!field.IsStatic)
+            {
                 return false;
+            }
 
             // Skip const fields (they are immutable by definition)
             if (field.IsConst)
+            {
                 return false;
+            }
 
             // Skip readonly fields that are primitives or known immutable types
             if (field.IsReadOnly && IsKnownImmutableType(field.Type))
+            {
                 return false;
+            }
 
             // Check if it's a well-known safe static field
             if (IsKnownSafeStaticField(field))
+            {
                 return false;
+            }
 
             // All other static fields are potentially mutable and problematic
             return true;
@@ -132,15 +154,21 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             // Must be static
             if (!property.IsStatic)
+            {
                 return false;
+            }
 
             // Check if it's a well-known safe static property
             if (IsKnownSafeStaticProperty(property))
+            {
                 return false;
+            }
 
             // Properties with only get accessor and known immutable return types are safe
             if (property.SetMethod == null && IsKnownImmutableType(property.Type))
+            {
                 return false;
+            }
 
             // All other static properties are potentially problematic
             return true;
@@ -149,32 +177,34 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static bool IsKnownImmutableType(ITypeSymbol type)
         {
             if (type == null)
+            {
                 return false;
+            }
 
-            var typeName = type.Name;
-            var namespaceName = type.ContainingNamespace?.ToDisplayString();
+            string typeName = type.Name;
+            string? namespaceName = type.ContainingNamespace?.ToDisplayString();
 
             // Check for primitive types and known immutable types
             return typeName switch
             {
-                "String" or "Int32" or "Int64" or "Double" or "Single" or "Boolean" or 
-                "Byte" or "SByte" or "Int16" or "UInt16" or "UInt32" or "UInt64" or 
+                "String" or "Int32" or "Int64" or "Double" or "Single" or "Boolean" or
+                "Byte" or "SByte" or "Int16" or "UInt16" or "UInt32" or "UInt64" or
                 "Char" or "Decimal" when namespaceName == "System" => true,
-                
-                "DateTime" or "DateTimeOffset" or "TimeSpan" or "Guid" 
+
+                "DateTime" or "DateTimeOffset" or "TimeSpan" or "Guid"
                 when namespaceName == "System" => true,
-                
+
                 "Version" when namespaceName == "System" => true,
-                
+
                 _ => false
             };
         }
 
         private static bool IsKnownSafeStaticField(IFieldSymbol field)
         {
-            var containingType = field.ContainingType;
-            var typeName = containingType?.Name;
-            var namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
+            INamedTypeSymbol? containingType = field.ContainingType;
+            string? typeName = containingType?.Name;
+            string? namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
 
             // Known safe static fields that are commonly used
             if (typeName == "String" && namespaceName == "System")
@@ -203,9 +233,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsKnownSafeStaticProperty(IPropertySymbol property)
         {
-            var containingType = property.ContainingType;
-            var typeName = containingType?.Name;
-            var namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
+            INamedTypeSymbol? containingType = property.ContainingType;
+            string? typeName = containingType?.Name;
+            string? namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
 
             // Known safe static properties
             if (typeName == "Type" && namespaceName == "System")

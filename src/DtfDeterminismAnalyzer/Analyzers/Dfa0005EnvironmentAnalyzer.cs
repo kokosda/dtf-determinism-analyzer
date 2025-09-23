@@ -1,9 +1,9 @@
+using System.Collections.Immutable;
+using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using DtfDeterminismAnalyzer.Utils;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -14,7 +14,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class Dfa0005EnvironmentAnalyzer : DiagnosticAnalyzer
     {
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
             ImmutableArray.Create(DiagnosticDescriptors.EnvironmentRule);
 
         public override void Initialize(AnalysisContext context)
@@ -28,18 +28,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
+            {
                 return;
+            }
 
-            var memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
+            ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
             if (memberSymbol is not IMethodSymbol and not IPropertySymbol)
+            {
                 return;
+            }
 
-            var containingType = memberSymbol.ContainingType;
+            INamedTypeSymbol containingType = memberSymbol.ContainingType;
             if (containingType == null)
+            {
                 return;
+            }
 
             // Check for Environment class operations
             if (IsEnvironmentOperation(containingType, memberSymbol.Name))
@@ -74,18 +80,24 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
-            
+
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
+            {
                 return;
+            }
 
-            var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
+            SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+            {
                 return;
+            }
 
-            var containingType = methodSymbol.ContainingType;
+            INamedTypeSymbol containingType = methodSymbol.ContainingType;
             if (containingType == null)
+            {
                 return;
+            }
 
             // Check for various environment-dependent operations
             if (IsEnvironmentOperation(containingType, methodSymbol.Name) ||
@@ -103,29 +115,26 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static bool IsEnvironmentOperation(INamedTypeSymbol containingType, string memberName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Environment operations
-            if (typeName == "Environment" && namespaceName == "System")
-            {
-                return memberName is "GetEnvironmentVariable" or "GetEnvironmentVariables" or
+            return typeName == "Environment" && namespaceName == "System"
+                ? memberName is "GetEnvironmentVariable" or "GetEnvironmentVariables" or
                        "SetEnvironmentVariable" or "ExpandEnvironmentVariables" or
                        "MachineName" or "UserName" or "UserDomainName" or
                        "OSVersion" or "Version" or "Is64BitOperatingSystem" or
                        "Is64BitProcess" or "ProcessorCount" or "SystemDirectory" or
                        "CurrentDirectory" or "GetFolderPath" or "GetLogicalDrives" or
                        "SystemPageSize" or "TickCount" or "TickCount64" or
-                       "WorkingSet" or "HasShutdownStarted" or "ExitCode";
-            }
-
-            return false;
+                       "WorkingSet" or "HasShutdownStarted" or "ExitCode"
+                : false;
         }
 
         private static bool IsSystemPropertyAccess(INamedTypeSymbol containingType, string memberName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.IO.Directory operations that access system properties
             if (typeName == "Directory" && namespaceName == "System.IO")
@@ -147,19 +156,16 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // System.AppDomain operations (if still using .NET Framework)
-            if (typeName == "AppDomain" && namespaceName == "System")
-            {
-                return memberName is "CurrentDomain" or "BaseDirectory" or "RelativeSearchPath" or
-                       "DynamicDirectory";
-            }
-
-            return false;
+            return typeName == "AppDomain" && namespaceName == "System"
+                ? memberName is "CurrentDomain" or "BaseDirectory" or "RelativeSearchPath" or
+                       "DynamicDirectory"
+                : false;
         }
 
         private static bool IsOperatingSystemOperation(INamedTypeSymbol containingType, string memberName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.OperatingSystem operations
             if (typeName == "OperatingSystem" && namespaceName == "System")
@@ -170,37 +176,31 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // System.Runtime.InteropServices.RuntimeInformation operations
-            if (typeName == "RuntimeInformation" && namespaceName == "System.Runtime.InteropServices")
-            {
-                return memberName is "IsOSPlatform" or "OSDescription" or "OSArchitecture" or
-                       "ProcessArchitecture" or "FrameworkDescription";
-            }
-
-            return false;
+            return typeName == "RuntimeInformation" && namespaceName == "System.Runtime.InteropServices"
+                ? memberName is "IsOSPlatform" or "OSDescription" or "OSArchitecture" or
+                       "ProcessArchitecture" or "FrameworkDescription"
+                : false;
         }
 
         private static bool IsProcessOperation(INamedTypeSymbol containingType, string memberName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Diagnostics.Process operations
-            if (typeName == "Process" && namespaceName == "System.Diagnostics")
-            {
-                return memberName is "GetCurrentProcess" or "GetProcesses" or "GetProcessById" or
-                       "GetProcessesByName" or "Start";
-            }
-
-            return false;
+            return typeName == "Process" && namespaceName == "System.Diagnostics"
+                ? memberName is "GetCurrentProcess" or "GetProcesses" or "GetProcessById" or
+                       "GetProcessesByName" or "Start"
+                : false;
         }
 
         private static bool IsRegistryOperation(INamedTypeSymbol containingType, string memberName)
         {
-            var typeName = containingType.Name;
-            var namespaceName = containingType.ContainingNamespace?.ToDisplayString();
+            string typeName = containingType.Name;
+            string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // Microsoft.Win32.Registry operations (Windows-specific)
-            if (namespaceName == "Microsoft.Win32" && 
+            if (namespaceName == "Microsoft.Win32" &&
                 (typeName == "Registry" || typeName == "RegistryKey"))
             {
                 return true; // All registry operations are environment dependent
