@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0007ThreadBlockingAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects thread-blocking operations and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0007ThreadBlockingTests
+    public class Dfa0007ThreadBlockingTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0007ThreadBlockingAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -19,6 +19,41 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        private async Task VerifyDFA0007Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0007 diagnostic");
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Thread-blocking call detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0007 diagnostics");
+        }
+
+        private async Task VerifyMultipleDFA0007Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0007 diagnostics");
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Thread-blocking call detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task ThreadSleepInOrchestratorShouldReportDFA0007()
@@ -29,17 +64,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:Thread.Sleep(1000)|};
+        Thread.Sleep(1000);
         await context.CallActivityAsync(""SomeActivity"", ""data"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskWaitInOrchestratorShouldReportDFA0007()
@@ -51,16 +81,11 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var task = context.CallActivityAsync(""SomeActivity"", ""data"");
-        {|#0:task.Wait()|};
+        task.Wait();
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskResultInOrchestratorShouldReportDFA0007()
@@ -72,17 +97,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var task = context.CallActivityAsync<string>(""GetData"", ""input"");
-        var result = {|#0:task.Result|};
+        var result = task.Result;
         await context.CallActivityAsync(""ProcessResult"", result);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskWaitAllInOrchestratorShouldReportDFA0007()
@@ -95,16 +115,11 @@ public class TestOrchestrator
     {
         var task1 = context.CallActivityAsync(""Activity1"", ""data1"");
         var task2 = context.CallActivityAsync(""Activity2"", ""data2"");
-        {|#0:Task.WaitAll(task1, task2)|};
+        Task.WaitAll(task1, task2);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskWaitAnyInOrchestratorShouldReportDFA0007()
@@ -117,17 +132,12 @@ public class TestOrchestrator
     {
         var task1 = context.CallActivityAsync(""Activity1"", ""data1"");
         var task2 = context.CallActivityAsync(""Activity2"", ""data2"");
-        var completedIndex = {|#0:Task.WaitAny(task1, task2)|};
+        var completedIndex = Task.WaitAny(task1, task2);
         await context.CallActivityAsync(""ProcessCompleted"", completedIndex);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task ManualResetEventWaitOneInOrchestratorShouldReportDFA0007()
@@ -140,17 +150,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:_event.WaitOne()|};
+        _event.WaitOne();
         await context.CallActivityAsync(""ProcessAfterEvent"", ""data"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task DurableTimerInOrchestratorShouldNotReportDFA0007()
@@ -168,7 +173,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -186,7 +191,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -204,7 +209,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -216,21 +221,15 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:Thread.Sleep(1000)|};
+        Thread.Sleep(1000);
         var task = context.CallActivityAsync(""SomeActivity"", ""data"");
-        {|#1:task.Wait()|};
+        task.Wait();
         
         await context.CallActivityAsync(""ProcessCompleted"", ""done"");
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0007").WithLocation(0).WithMessage("Thread-blocking call detected."),
-                VerifyCS.Diagnostic("DFA0007").WithLocation(1).WithMessage("Thread-blocking call detected.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0007Diagnostics(testCode, 2);
         }
 
         [Test]
@@ -249,16 +248,11 @@ public class TestOrchestrator
     private void WaitForCompletion()
     {
         // Should be detected even in helper methods within orchestrator class
-        {|#0:Thread.Sleep(2000)|};
+        Thread.Sleep(2000);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task SemaphoreWaitOneInOrchestratorShouldReportDFA0007()
@@ -271,7 +265,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:_semaphore.WaitOne()|};
+        _semaphore.WaitOne();
         try
         {
             await context.CallActivityAsync(""CriticalSection"", ""data"");
@@ -283,12 +277,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
 
         [Test]
         public async Task MonitorWaitInOrchestratorShouldReportDFA0007()
@@ -303,17 +292,12 @@ public class TestOrchestrator
     {
         lock (_lockObject)
         {
-            {|#0:Monitor.Wait(_lockObject)|};
+            Monitor.Wait(_lockObject);
         }
         await context.CallActivityAsync(""ProcessAfterWait"", ""data"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0007")
-                .WithLocation(0)
-                .WithMessage("Thread-blocking call detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0007Diagnostic(testCode);        }
     }
 }

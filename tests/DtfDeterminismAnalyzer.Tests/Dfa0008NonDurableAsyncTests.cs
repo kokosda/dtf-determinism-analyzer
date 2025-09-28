@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0008NonDurableAsyncAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-durable async operations and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0008NonDurableAsyncTests
+    public class Dfa0008NonDurableAsyncTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0008NonDurableAsyncAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -19,6 +19,41 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        private async Task VerifyDFA0008Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0008").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0008 diagnostic");
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Non-durable async operation detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0008").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0008 diagnostics");
+        }
+
+        private async Task VerifyMultipleDFA0008Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0008").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0008 diagnostics");
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Non-durable async operation detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task TaskDelayInOrchestratorShouldReportDFA0008()
@@ -30,17 +65,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Task.Delay is not replay-safe
-        await {|#0:Task.Delay(TimeSpan.FromMinutes(5))|};
+        await Task.Delay(TimeSpan.FromMinutes(5));
         await context.CallActivityAsync(""ProcessAfterDelay"", ""data"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0008()
@@ -54,18 +84,13 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Direct HTTP calls are not replay-safe
-        var response = await {|#0:_httpClient.GetAsync(""https://api.example.com/data"")|};
+        var response = await _httpClient.GetAsync(""https://api.example.com/data"");
         var content = await response.Content.ReadAsStringAsync();
         await context.CallActivityAsync(""ProcessData"", content);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskRunInOrchestratorShouldReportDFA0008()
@@ -77,17 +102,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Task.Run is not replay-safe
-        var result = await {|#0:Task.Run(() => ""some computation"")|};
+        var result = await Task.Run(() => ""some computation"");
         await context.CallActivityAsync(""ProcessResult"", result);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskFromResultInOrchestratorShouldNotReportDFA0008()
@@ -104,7 +124,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -117,17 +137,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // ConfigureAwait(false) is not replay-safe in orchestrators
-        await {|#0:context.CallActivityAsync(""GetData"", ""input"").ConfigureAwait(false)|};
+        await context.CallActivityAsync(""GetData"", ""input"").ConfigureAwait(false);
         await context.CallActivityAsync(""ProcessData"", ""done"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskWhenAllNonDurableTasksInOrchestratorShouldReportDFA0008()
@@ -143,17 +158,12 @@ public class TestOrchestrator
         // Task.WhenAll with non-durable tasks should be detected
         var task1 = _httpClient.GetAsync(""https://api1.example.com"");
         var task2 = _httpClient.GetAsync(""https://api2.example.com"");
-        await {|#0:Task.WhenAll(task1, task2)|};
+        await Task.WhenAll(task1, task2);
         await context.CallActivityAsync(""ProcessResults"", ""done"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskWhenAllDurableTasksInOrchestratorShouldNotReportDFA0008()
@@ -172,7 +182,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -191,7 +201,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -209,7 +219,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -223,22 +233,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        await {|#0:Task.Delay(1000)|};
-        var response = await {|#1:_httpClient.GetAsync(""https://api.example.com"")|};
-        var result = await {|#2:Task.Run(() => response.Content.ReadAsStringAsync())|};
+        await Task.Delay(1000);
+        var response = await _httpClient.GetAsync(""https://api.example.com"");
+        var result = await Task.Run(() => response.Content.ReadAsStringAsync());
         await context.CallActivityAsync(""ProcessResult"", ""done"");
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0008").WithLocation(0).WithMessage("Non-durable async operation detected."),
-                VerifyCS.Diagnostic("DFA0008").WithLocation(1).WithMessage("Non-durable async operation detected."),
-                VerifyCS.Diagnostic("DFA0008").WithLocation(2).WithMessage("Non-durable async operation detected.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyMultipleDFA0008Diagnostics(testCode, 3);        }
 
         [Test]
         public async Task NonDurableOperationInNestedMethodInOrchestratorShouldReportDFA0008()
@@ -256,16 +258,11 @@ public class TestOrchestrator
     private async Task DelayThenProcess()
     {
         // Should be detected even in helper methods within orchestrator class
-        await {|#0:Task.Delay(2000)|};
+        await Task.Delay(2000);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task TaskYieldInOrchestratorShouldReportDFA0008()
@@ -277,17 +274,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Task.Yield is not replay-safe
-        await {|#0:Task.Yield()|};
+        await Task.Yield();
         await context.CallActivityAsync(""ProcessAfterYield"", ""data"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
         public async Task CustomAsyncMethodInOrchestratorShouldReportDFA0008()
@@ -299,7 +291,7 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Custom async methods that aren't durable should be detected
-        var result = await {|#0:GetDataFromExternalService()|};
+        var result = await GetDataFromExternalService();
         await context.CallActivityAsync(""ProcessResult"", result);
     }
 
@@ -312,11 +304,6 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0008")
-                .WithLocation(0)
-                .WithMessage("Non-durable async operation detected.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0008Diagnostic(testCode);        }
     }
 }

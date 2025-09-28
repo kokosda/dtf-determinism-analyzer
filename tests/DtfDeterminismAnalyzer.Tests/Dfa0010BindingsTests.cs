@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -10,7 +11,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects direct binding usage and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0010BindingsTests
+    public class Dfa0010BindingsTests : AnalyzerTestBase<Analyzers.Dfa0010BindingsAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -21,6 +22,32 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Extensions.Logging;
 ";
 
+        // Helper methods for test verification
+        private async Task VerifyDFA0010Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
+            Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
+            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected."), "Expected correct diagnostic message");
+        }
+
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(0), "Expected no diagnostics");
+        }
+
+        private async Task VerifyMultipleDFA0010Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(expectedCount), $"Expected exactly {expectedCount} diagnostics");
+            foreach (var diagnostic in result.AnalyzerDiagnostics)
+            {
+                Assert.That(diagnostic.Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
+                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected."), "Expected correct diagnostic message");
+            }
+        }
+
         [Test]
         public async Task BlobTriggerInOrchestratorShouldReportDFA0010()
         {
@@ -30,7 +57,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:Blob(""container/blob.txt"")|} ] Stream blob)
+        [ ] Stream blob)
     {
         // Direct blob binding should not be used in orchestrators
         using var reader = new StreamReader(blob);
@@ -39,12 +66,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task QueueTriggerInOrchestratorShouldReportDFA0010()
@@ -55,19 +77,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:Queue(""myqueue"")|} ] string queueItem)
+        [ ] string queueItem)
     {
         // Direct queue binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessQueueItem"", queueItem);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task ServiceBusTriggerInOrchestratorShouldReportDFA0010()
@@ -78,19 +95,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:ServiceBusTrigger(""mytopic"", ""mysubscription"")|} ] string message)
+        [ ] string message)
     {
         // Direct Service Bus binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessMessage"", message);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task CosmosDBTriggerInOrchestratorShouldReportDFA0010()
@@ -101,19 +113,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:CosmosDBTrigger(databaseName: ""mydb"", collectionName: ""mycoll"")|} ] string document)
+        [ ] string document)
     {
         // Direct Cosmos DB binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessDocument"", document);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task HttpTriggerInOrchestratorShouldReportDFA0010()
@@ -127,7 +134,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task<IActionResult> RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:HttpTrigger(AuthorizationLevel.Function, ""get"", ""post"")|} ] HttpRequest req)
+        [ ] HttpRequest req)
     {
         // Direct HTTP binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessRequest"", ""data"");
@@ -135,12 +142,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task TableBindingInOrchestratorShouldReportDFA0010()
@@ -151,7 +153,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:Table(""MyTable"")|} ] IAsyncCollector<dynamic> table)
+        [ ] IAsyncCollector<dynamic> table)
     {
         // Direct table binding should not be used in orchestrators
         await table.AddAsync(new { Data = ""test"" });
@@ -159,12 +161,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task ILoggerInOrchestratorShouldNotReportDFA0010()
@@ -183,7 +180,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -206,7 +203,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -218,9 +215,9 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:Queue(""queue1"")|} ] string queueItem,
-        [{|#1:Blob(""container/blob.txt"")|} ] Stream blob,
-        [{|#2:Table(""MyTable"")|} ] IAsyncCollector<dynamic> table)
+        [ ] string queueItem,
+        [ ] Stream blob,
+        [ ] IAsyncCollector<dynamic> table)
     {
         // Multiple direct bindings should all be detected
         using var reader = new StreamReader(blob);
@@ -231,15 +228,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0010").WithLocation(0).WithMessage("Direct binding usage detected in orchestrator."),
-                VerifyCS.Diagnostic("DFA0010").WithLocation(1).WithMessage("Direct binding usage detected in orchestrator."),
-                VerifyCS.Diagnostic("DFA0010").WithLocation(2).WithMessage("Direct binding usage detected in orchestrator.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyMultipleDFA0010Diagnostics(testCode, 3);        }
 
         [Test]
         public async Task CustomBindingInOrchestratorShouldReportDFA0010()
@@ -250,7 +239,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:CustomBinding(""config"")|} ] string customData)
+        [ ] string customData)
     {
         // Custom bindings should also be detected
         await context.CallActivityAsync(""ProcessCustom"", customData);
@@ -262,12 +251,7 @@ public class CustomBindingAttribute : Attribute
     public CustomBindingAttribute(string config) { }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task EventHubTriggerInOrchestratorShouldReportDFA0010()
@@ -278,19 +262,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:EventHubTrigger(""myeventhub"")|} ] string eventData)
+        [ ] string eventData)
     {
         // Direct Event Hub binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessEvent"", eventData);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task SignalRBindingInOrchestratorShouldReportDFA0010()
@@ -301,7 +280,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:SignalR(HubName = ""chat"")|} ] IAsyncCollector<SignalRMessage> signalRMessages)
+        [ ] IAsyncCollector<SignalRMessage> signalRMessages)
     {
         // Direct SignalR binding should not be used in orchestrators
         await signalRMessages.AddAsync(new SignalRMessage { Target = ""notify"", Arguments = new[] { ""test"" } });
@@ -320,12 +299,7 @@ public class SignalRMessage
     public object[] Arguments { get; set; }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
         public async Task SqlBindingInOrchestratorShouldReportDFA0010()
@@ -336,7 +310,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [{|#0:Sql(""SELECT * FROM MyTable"", ""SqlConnectionString"")|} ] IEnumerable<dynamic> sqlData)
+        [ ] IEnumerable<dynamic> sqlData)
     {
         // Direct SQL binding should not be used in orchestrators
         var results = sqlData.ToList();
@@ -349,11 +323,6 @@ public class SqlAttribute : Attribute
     public SqlAttribute(string commandText, string connectionStringSetting) { }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0010")
-                .WithLocation(0)
-                .WithMessage("Direct binding usage detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0010Diagnostic(testCode);        }
     }
 }

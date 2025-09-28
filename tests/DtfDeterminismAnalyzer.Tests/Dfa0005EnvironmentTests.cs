@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0005EnvironmentAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic environment variable access and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0005EnvironmentTests
+    public class Dfa0005EnvironmentTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0005EnvironmentAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -18,6 +18,64 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify DFA0005 diagnostic is reported.
+        /// </summary>
+        private async Task VerifyDFA0005Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0005").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0005 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Environment variable read is non-deterministic", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify no diagnostics are reported.
+        /// </summary>
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify no analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0005").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0005 diagnostics");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify multiple DFA0005 diagnostics.
+        /// </summary>
+        private async Task VerifyMultipleDFA0005Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0005").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0005 diagnostics");
+
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Environment variable read is non-deterministic", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task EnvironmentGetEnvironmentVariableInOrchestratorShouldReportDFA0005()
@@ -28,17 +86,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var connectionString = {|#0:Environment.GetEnvironmentVariable(""DATABASE_CONNECTION"")|};
+        var connectionString = Environment.GetEnvironmentVariable(""DATABASE_CONNECTION"");
         await context.CallActivityAsync(""ConnectToDatabase"", connectionString);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentGetEnvironmentVariablesInOrchestratorShouldReportDFA0005()
@@ -49,17 +102,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var allVars = {|#0:Environment.GetEnvironmentVariables()|};
+        var allVars = Environment.GetEnvironmentVariables();
         await context.CallActivityAsync(""ProcessEnvironment"", allVars);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentSetEnvironmentVariableInOrchestratorShouldReportDFA0005()
@@ -71,17 +119,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var value = context.GetInput<string>();
-        {|#0:Environment.SetEnvironmentVariable(""TEMP_VALUE"", value)|};
+        Environment.SetEnvironmentVariable(""TEMP_VALUE"", value);
         await context.CallActivityAsync(""ProcessAfterSet"", ""done"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentUserNameInOrchestratorShouldReportDFA0005()
@@ -92,17 +135,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var userName = {|#0:Environment.UserName|};
+        var userName = Environment.UserName;
         await context.CallActivityAsync(""LogUser"", userName);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentMachineNameInOrchestratorShouldReportDFA0005()
@@ -113,17 +151,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var machine = {|#0:Environment.MachineName|};
+        var machine = Environment.MachineName;
         await context.CallActivityAsync(""LogMachine"", machine);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentGetEnvironmentVariableInActivityFunctionShouldNotReportDFA0005()
@@ -140,7 +173,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -156,7 +189,7 @@ public class ConfigurationService
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -168,22 +201,15 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var dbConnection = {|#0:Environment.GetEnvironmentVariable(""DB_CONNECTION"")|};
-        var apiKey = {|#1:Environment.GetEnvironmentVariable(""API_KEY"")|};
-        var userName = {|#2:Environment.UserName|};
+        var dbConnection = Environment.GetEnvironmentVariable(""DB_CONNECTION"");
+        var apiKey = Environment.GetEnvironmentVariable(""API_KEY"");
+        var userName = Environment.UserName;
         
         await context.CallActivityAsync(""ProcessConfig"", new { dbConnection, apiKey, userName });
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0005").WithLocation(0).WithMessage("Environment variable read is non-deterministic."),
-                VerifyCS.Diagnostic("DFA0005").WithLocation(1).WithMessage("Environment variable read is non-deterministic."),
-                VerifyCS.Diagnostic("DFA0005").WithLocation(2).WithMessage("Environment variable read is non-deterministic.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0005Diagnostics(testCode, 3);
         }
 
         [Test]
@@ -202,16 +228,11 @@ public class TestOrchestrator
     private string GetConfiguration()
     {
         // Should be detected even in helper methods within orchestrator class
-        return {|#0:Environment.GetEnvironmentVariable(""APP_CONFIG"")|} ?? ""default"";
+        return Environment.GetEnvironmentVariable(""APP_CONFIG"") ?? ""default"";
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentExpandEnvironmentVariablesInOrchestratorShouldReportDFA0005()
@@ -222,17 +243,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var expanded = {|#0:Environment.ExpandEnvironmentVariables(""%TEMP%\\myapp"")|};
+        var expanded = Environment.ExpandEnvironmentVariables(""%TEMP%\\myapp"");
         await context.CallActivityAsync(""ProcessPath"", expanded);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
         public async Task EnvironmentCurrentDirectoryInOrchestratorShouldReportDFA0005()
@@ -243,16 +259,11 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var currentDir = {|#0:Environment.CurrentDirectory|};
+        var currentDir = Environment.CurrentDirectory;
         await context.CallActivityAsync(""ProcessDirectory"", currentDir);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0005")
-                .WithLocation(0)
-                .WithMessage("Environment variable read is non-deterministic.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0005Diagnostic(testCode);        }
     }
 }

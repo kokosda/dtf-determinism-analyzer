@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0003RandomAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic Random usage and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0003RandomTests
+    public class Dfa0003RandomTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0003RandomAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -18,6 +18,64 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify DFA0003 diagnostic is reported.
+        /// </summary>
+        private async Task VerifyDFA0003Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0003").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0003 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Non-deterministic random used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify no diagnostics are reported.
+        /// </summary>
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify no analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0003").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0003 diagnostics");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify multiple DFA0003 diagnostics.
+        /// </summary>
+        private async Task VerifyMultipleDFA0003Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0003").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0003 diagnostics");
+
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Non-deterministic random used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task RandomConstructorNoSeedInOrchestratorShouldReportDFA0003()
@@ -28,18 +86,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var random = {|#0:new Random()|};
+        var random = new Random();
         var value = random.Next(1, 100);
         await context.CallActivityAsync(""SomeActivity"", value);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomSharedFieldInOrchestratorShouldReportDFA0003()
@@ -47,7 +100,7 @@ public class TestOrchestrator
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
 {
-    private static readonly Random _random = {|#0:new Random()|};
+    private static readonly Random _random = new Random();
 
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
@@ -57,12 +110,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomNextMethodInOrchestratorShouldReportDFA0003()
@@ -73,18 +121,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var random = {|#0:new Random()|};
+        var random = new Random();
         var randomValue = random.Next();
         await context.CallActivityAsync(""ProcessRandom"", randomValue);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomNextDoubleMethodInOrchestratorShouldReportDFA0003()
@@ -95,18 +138,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var random = {|#0:new Random()|};
+        var random = new Random();
         var randomValue = random.NextDouble();
         await context.CallActivityAsync(""ProcessRandom"", randomValue);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomNextBytesMethodInOrchestratorShouldReportDFA0003()
@@ -117,19 +155,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var random = {|#0:new Random()|};
+        var random = new Random();
         var bytes = new byte[10];
         random.NextBytes(bytes);
         await context.CallActivityAsync(""ProcessBytes"", bytes);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomWithFixedSeedInOrchestratorShouldNotReportDFA0003()
@@ -147,7 +180,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -167,7 +200,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -185,7 +218,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -203,7 +236,7 @@ public class RandomService
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -215,8 +248,8 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var random1 = {|#0:new Random()|};
-        var random2 = {|#1:new Random()|};
+        var random1 = new Random();
+        var random2 = new Random();
         
         var value1 = random1.Next();
         var value2 = random2.NextDouble();
@@ -225,13 +258,7 @@ public class TestOrchestrator
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0003").WithLocation(0).WithMessage("Non-deterministic random used in orchestrator."),
-                VerifyCS.Diagnostic("DFA0003").WithLocation(1).WithMessage("Non-deterministic random used in orchestrator.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0003Diagnostics(testCode, 2);
         }
 
         [Test]
@@ -249,17 +276,12 @@ public class TestOrchestrator
 
     private int GenerateRandomValue()
     {
-        var random = {|#0:new Random()|}; // Should be detected even in helper methods within orchestrator class
+        var random = new Random(); // Should be detected even in helper methods within orchestrator class
         return random.Next(1, 100);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomSharedSeededInOrchestratorShouldNotReportDFA0003()
@@ -277,7 +299,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -290,17 +312,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var input = context.GetInput<bool>();
-        var value = input ? {|#0:new Random()|}.Next() : 42;
+        var value = input ? new Random().Next() : 42;
         await context.CallActivityAsync(""SomeActivity"", value);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
         public async Task RandomWithVariableSeedInOrchestratorShouldReportDFA0003()
@@ -313,17 +330,12 @@ public class TestOrchestrator
     {
         // Non-deterministic seed based on current time - should be flagged
         var seed = DateTime.Now.Millisecond;
-        var random = {|#0:new Random(seed)|};
+        var random = new Random(seed);
         var value = random.Next(1, 100);
         await context.CallActivityAsync(""SomeActivity"", value);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0003")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic random used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0003Diagnostic(testCode);        }
     }
 }

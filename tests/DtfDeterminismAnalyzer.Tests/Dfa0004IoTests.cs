@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0004IoAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic I/O operations and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0004IoTests
+    public class Dfa0004IoTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0004IoAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -21,6 +21,64 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
 
+        /// <summary>
+        /// Helper method to run analyzer test and verify DFA0004 diagnostic is reported.
+        /// </summary>
+        private async Task VerifyDFA0004Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0004").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0004 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Outbound I/O detected in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify no diagnostics are reported.
+        /// </summary>
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify no analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0004").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0004 diagnostics");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify multiple DFA0004 diagnostics.
+        /// </summary>
+        private async Task VerifyMultipleDFA0004Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0004").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0004 diagnostics");
+
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Outbound I/O detected in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
+
         [Test]
         public async Task FileReadAllTextInOrchestratorShouldReportDFA0004()
         {
@@ -30,17 +88,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var content = {|#0:File.ReadAllText(""config.txt"")|};
+        var content = File.ReadAllText(""config.txt"");
         await context.CallActivityAsync(""ProcessContent"", content);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
         public async Task FileWriteAllTextInOrchestratorShouldReportDFA0004()
@@ -52,17 +105,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var data = context.GetInput<string>();
-        {|#0:File.WriteAllText(""output.txt"", data)|};
+        File.WriteAllText(""output.txt"", data);
         await context.CallActivityAsync(""NotifyCompletion"", ""done"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
         public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0004()
@@ -75,18 +123,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var response = await {|#0:_httpClient.GetAsync(""https://api.example.com/data"")|};
+        var response = await _httpClient.GetAsync(""https://api.example.com/data"");
         var content = await response.Content.ReadAsStringAsync();
         await context.CallActivityAsync(""ProcessData"", content);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
         public async Task FileStreamConstructorInOrchestratorShouldReportDFA0004()
@@ -97,19 +140,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        using var stream = {|#0:new FileStream(""data.bin"", FileMode.Open)|};
+        using var stream = new FileStream(""data.bin"", FileMode.Open);
         var buffer = new byte[1024];
         var bytesRead = stream.Read(buffer, 0, buffer.Length);
         await context.CallActivityAsync(""ProcessBytes"", buffer);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
         public async Task DirectoryGetFilesInOrchestratorShouldReportDFA0004()
@@ -120,17 +158,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var files = {|#0:Directory.GetFiles(""/data"")|};
+        var files = Directory.GetFiles(""/data"");
         await context.CallActivityAsync(""ProcessFiles"", files);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
         public async Task FileIOInActivityFunctionShouldNotReportDFA0004()
@@ -147,7 +180,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -166,7 +199,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -180,20 +213,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var config = {|#0:File.ReadAllText(""config.json"")|};
-        var response = await {|#1:_httpClient.GetAsync(""https://api.example.com"")|};
+        var config = File.ReadAllText(""config.json"");
+        var response = await _httpClient.GetAsync(""https://api.example.com"");
         
         await context.CallActivityAsync(""ProcessData"", new { config, response });
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0004").WithLocation(0).WithMessage("Outbound I/O detected in orchestrator."),
-                VerifyCS.Diagnostic("DFA0004").WithLocation(1).WithMessage("Outbound I/O detected in orchestrator.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0004Diagnostics(testCode, 2);
         }
 
         [Test]
@@ -212,7 +239,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -231,15 +258,10 @@ public class TestOrchestrator
     private string LoadConfiguration()
     {
         // Should be detected even in helper methods within orchestrator class
-        return {|#0:File.ReadAllText(""config.json"")|};
+        return File.ReadAllText(""config.json"");
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0004")
-                .WithLocation(0)
-                .WithMessage("Outbound I/O detected in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0004Diagnostic(testCode);        }
     }
 }

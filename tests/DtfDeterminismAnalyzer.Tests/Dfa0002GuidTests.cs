@@ -1,7 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0002GuidAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic GUID generation and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0002GuidTests
+    public class Dfa0002GuidTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0002GuidAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -18,6 +18,64 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify DFA0002 diagnostic is reported.
+        /// </summary>
+        private async Task VerifyDFA0002Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0002").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0002 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Non-deterministic GUID generated in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify no diagnostics are reported.
+        /// </summary>
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify no analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0002").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0002 diagnostics");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify multiple DFA0002 diagnostics.
+        /// </summary>
+        private async Task VerifyMultipleDFA0002Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0002").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0002 diagnostics");
+
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Non-deterministic GUID generated in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task GuidNewGuidInOrchestratorShouldReportDFA0002()
@@ -28,16 +86,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var newGuid = {|#0:Guid.NewGuid()|};
+        var newGuid = Guid.NewGuid();
         await context.CallActivityAsync(""SomeActivity"", newGuid);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
 
         [Test]
@@ -49,17 +103,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        Guid correlationId = {|#0:Guid.NewGuid()|};
+        Guid correlationId = Guid.NewGuid();
         var input = new { Id = correlationId, Data = ""test"" };
         await context.CallActivityAsync(""ProcessData"", input);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
 
         [Test]
@@ -71,15 +121,11 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        await context.CallActivityAsync(""SomeActivity"", {|#0:Guid.NewGuid()|});
+        await context.CallActivityAsync(""SomeActivity"", Guid.NewGuid());
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
 
         [Test]
@@ -91,16 +137,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var request = new { RequestId = {|#0:Guid.NewGuid()|}, Data = ""test"" };
+        var request = new { RequestId = Guid.NewGuid(), Data = ""test"" };
         await context.CallActivityAsync(""ProcessRequest"", request);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
 
         [Test]
@@ -117,7 +159,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -132,7 +174,7 @@ public class RegularService
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -149,7 +191,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -161,22 +203,15 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var guid1 = {|#0:Guid.NewGuid()|};
-        var guid2 = {|#1:Guid.NewGuid()|};
-        var request = new { Id1 = guid1, Id2 = guid2, Id3 = {|#2:Guid.NewGuid()|} };
+        var guid1 = Guid.NewGuid();
+        var guid2 = Guid.NewGuid();
+        var request = new { Id1 = guid1, Id2 = guid2, Id3 = Guid.NewGuid() };
         
         await context.CallActivityAsync(""ProcessMultipleIds"", request);
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0002").WithLocation(0).WithMessage("Non-deterministic GUID generated in orchestrator."),
-                VerifyCS.Diagnostic("DFA0002").WithLocation(1).WithMessage("Non-deterministic GUID generated in orchestrator."),
-                VerifyCS.Diagnostic("DFA0002").WithLocation(2).WithMessage("Non-deterministic GUID generated in orchestrator.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0002Diagnostics(testCode, 3);
         }
 
         [Test]
@@ -194,15 +229,11 @@ public class TestOrchestrator
 
     private Guid GenerateCorrelationId()
     {
-        return {|#0:Guid.NewGuid()|}; // Should be detected even in helper methods within orchestrator class
+        return Guid.NewGuid(); // Should be detected even in helper methods within orchestrator class
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
 
         [Test]
@@ -221,7 +252,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -239,7 +270,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -257,7 +288,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -270,16 +301,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var input = context.GetInput<string>();
-        var id = string.IsNullOrEmpty(input) ? {|#0:Guid.NewGuid()|} : Guid.Parse(input);
+        var id = string.IsNullOrEmpty(input) ? Guid.NewGuid() : Guid.Parse(input);
         await context.CallActivityAsync(""SomeActivity"", id);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0002")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic GUID generated in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0002Diagnostic(testCode);
         }
     }
 }

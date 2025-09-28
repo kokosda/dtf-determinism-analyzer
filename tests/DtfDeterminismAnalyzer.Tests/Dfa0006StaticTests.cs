@@ -1,7 +1,8 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0006StaticAnalyzer>;
+
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -10,7 +11,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic static state access and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0006StaticTests
+    public class Dfa0006StaticTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0006StaticAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -18,6 +19,41 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        private async Task VerifyDFA0006Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0006 diagnostic");
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Static field access in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0006 diagnostics");
+        }
+
+        private async Task VerifyMultipleDFA0006Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0006 diagnostics");
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Static field access in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
+        }
 
         [Test]
         public async Task StaticFieldWriteInOrchestratorShouldReportDFA0006()
@@ -30,17 +66,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:_sharedState = ""modified""|};
+        _sharedState = ""modified"";
         await context.CallActivityAsync(""ProcessState"", _sharedState);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticFieldReadMutableInOrchestratorShouldReportDFA0006()
@@ -53,17 +84,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var currentState = {|#0:_sharedState|};
+        var currentState = _sharedState;
         await context.CallActivityAsync(""ProcessState"", currentState);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticPropertyWriteInOrchestratorShouldReportDFA0006()
@@ -76,17 +102,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:SharedValue = ""modified""|};
+        SharedValue = ""modified"";
         await context.CallActivityAsync(""ProcessValue"", SharedValue);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticCollectionModificationInOrchestratorShouldReportDFA0006()
@@ -102,17 +123,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var item = context.GetInput<string>();
-        {|#0:_sharedList.Add(item)|};
+        _sharedList.Add(item);
         await context.CallActivityAsync(""ProcessList"", _sharedList);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticReadonlyConstInOrchestratorShouldNotReportDFA0006()
@@ -133,7 +149,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -156,7 +172,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -176,7 +192,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -194,7 +210,7 @@ public class StatefulService
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -209,20 +225,14 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        {|#0:_state1 = ""modified1""|};
-        var currentState2 = {|#1:_state2|};
+        _state1 = ""modified1"";
+        var currentState2 = _state2;
         
         await context.CallActivityAsync(""ProcessStates"", new { _state1, currentState2 });
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0006").WithLocation(0).WithMessage("Static state may change across replays."),
-                VerifyCS.Diagnostic("DFA0006").WithLocation(1).WithMessage("Static state may change across replays.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0006Diagnostics(testCode, 2);
         }
 
         [Test]
@@ -243,16 +253,11 @@ public class TestOrchestrator
     private void ModifySharedState(string newValue)
     {
         // Should be detected even in helper methods within orchestrator class
-        {|#0:_sharedState = newValue|};
+        _sharedState = newValue;
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticDictionaryModificationInOrchestratorShouldReportDFA0006()
@@ -268,17 +273,12 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var key = context.GetInput<string>();
-        {|#0:_sharedDictionary[key] = ""value""|};
+        _sharedDictionary[key] = ""value"";
         await context.CallActivityAsync(""ProcessDictionary"", _sharedDictionary);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
         public async Task StaticLazyAccessInOrchestratorShouldReportDFA0006()
@@ -292,16 +292,11 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         // Lazy initialization can be non-deterministic
-        var value = {|#0:_lazyValue.Value|};
+        var value = _lazyValue.Value;
         await context.CallActivityAsync(""ProcessValue"", value);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0006")
-                .WithLocation(0)
-                .WithMessage("Static state may change across replays.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
-        }
+            await VerifyDFA0006Diagnostic(testCode);        }
     }
 }

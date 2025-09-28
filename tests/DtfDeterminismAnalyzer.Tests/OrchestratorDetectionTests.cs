@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>;
@@ -9,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer correctly identifies orchestrator functions and applies rules appropriately.
     /// </summary>
     [TestFixture]
-    public class OrchestratorDetectionTests
+    public class OrchestratorDetectionTests : AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -17,6 +18,32 @@ using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
+
+        // Helper methods for test verification
+        private async Task VerifyDFA0001Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
+            Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0001"), "Expected DFA0001 diagnostic");
+            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Non-deterministic time API used."), "Expected correct diagnostic message");
+        }
+
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(0), "Expected no diagnostics");
+        }
+
+        private async Task VerifyMultipleDFA0001Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(expectedCount), $"Expected exactly {expectedCount} diagnostics");
+            foreach (var diagnostic in result.AnalyzerDiagnostics)
+            {
+                Assert.That(diagnostic.Id, Is.EqualTo("DFA0001"), "Expected DFA0001 diagnostic");
+                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Non-deterministic time API used."), "Expected correct diagnostic message");
+            }
+        }
 
         [Test]
         public async Task OrchestrationTriggerAttributeShouldDetectOrchestrator()
@@ -33,7 +60,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -53,7 +80,7 @@ public class TestActivity
 }";
 
             // No diagnostics expected for activity functions
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -76,7 +103,7 @@ public class TestHttpFunction
 }";
 
             // No diagnostics expected for HTTP trigger functions
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -94,7 +121,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection with base class - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -117,7 +144,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection with multiple parameters - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -135,7 +162,7 @@ public static class TestOrchestrator
 }";
 
             // This test validates orchestrator detection for static methods - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -154,7 +181,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection with return value - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -176,7 +203,7 @@ public class TestFunction
 }";
 
             // No diagnostics expected for non-orchestrator functions
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -194,7 +221,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection without FunctionName attribute - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -215,7 +242,7 @@ public class OuterClass
 }";
 
             // This test validates orchestrator detection in nested classes - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -247,7 +274,7 @@ public class TestOrchestrators
 }";
 
             // This test validates detection of multiple orchestrators in same class - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -270,7 +297,7 @@ public class TestOrchestrator
 }";
 
             // This test validates orchestrator detection with custom context interface - no diagnostics expected
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
     }
 }

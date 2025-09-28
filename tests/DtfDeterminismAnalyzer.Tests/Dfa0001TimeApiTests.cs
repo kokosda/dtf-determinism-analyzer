@@ -1,16 +1,16 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
     /// <summary>
-    /// Contract tests for DFA0001: DateTime API detection in Durable Task Framework orchestrators.
+    /// Contract tests for DFA0001: DateTime API usage detection in Durable Task Framework orchestrators.
     /// These tests validate that the analyzer detects non-deterministic time APIs and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0001TimeApiTests
+    public class Dfa0001TimeApiTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -28,16 +28,84 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var now = {|#0:DateTime.Now|};
+        var now = DateTime.Now;
         await context.CallActivityAsync(""SomeActivity"", now);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
+            // Use AnalyzerTestBase methods to run the test
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0001 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+        /// <summary>
+        /// Helper method to run analyzer test and verify expected DFA0001 diagnostic.
+        /// </summary>
+        private async Task VerifyDFA0001Diagnostic(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
+            Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0001 diagnostic");
+            
+            var diagnostic = analyzerDiagnostics[0];
+            Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                "Diagnostic message should match expected message");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify no diagnostics are reported.
+        /// </summary>
+        private async Task VerifyNoDiagnostics(string testCode)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify no analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
+            Assert.AreEqual(0, analyzerDiagnostics.Count, "Should report no DFA0001 diagnostics");
+        }
+
+        /// <summary>
+        /// Helper method to run analyzer test and verify multiple DFA0001 diagnostics.
+        /// </summary>
+        private async Task VerifyMultipleDFA0001Diagnostics(string testCode, int expectedCount)
+        {
+            var result = await RunAnalyzerTest(testCode);
+            
+            // Verify compilation succeeded
+            Assert.IsTrue(result.CompilationSucceeded, 
+                $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
+            
+            // Verify analyzer diagnostics
+            var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
+            Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0001 diagnostics");
+            
+            // Verify all diagnostics have the expected message
+            foreach (var diagnostic in analyzerDiagnostics)
+            {
+                Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
+                    "Diagnostic message should match expected message");
+            }
         }
 
         [Test]
@@ -49,16 +117,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var utcNow = {|#0:DateTime.UtcNow|};
+        var utcNow = DateTime.UtcNow;
         await context.CallActivityAsync(""SomeActivity"", utcNow);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -70,16 +134,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var today = {|#0:DateTime.Today|};
+        var today = DateTime.Today;
         await context.CallActivityAsync(""SomeActivity"", today);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -91,16 +151,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var offsetNow = {|#0:DateTimeOffset.Now|};
+        var offsetNow = DateTimeOffset.Now;
         await context.CallActivityAsync(""SomeActivity"", offsetNow);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -112,16 +168,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var offsetUtcNow = {|#0:DateTimeOffset.UtcNow|};
+        var offsetUtcNow = DateTimeOffset.UtcNow;
         await context.CallActivityAsync(""SomeActivity"", offsetUtcNow);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -135,16 +187,12 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var stopwatch = {|#0:Stopwatch.StartNew()|};
+        var stopwatch = Stopwatch.StartNew();
         await context.CallActivityAsync(""SomeActivity"", stopwatch.ElapsedMilliseconds);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -158,17 +206,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var stopwatch = {|#0:new Stopwatch()|};
+        var stopwatch = new Stopwatch();
         stopwatch.Start();
         await context.CallActivityAsync(""SomeActivity"", stopwatch.ElapsedMilliseconds);
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
 
         [Test]
@@ -185,7 +229,7 @@ public class TestActivity
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -200,7 +244,7 @@ public class RegularClass
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -217,7 +261,7 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyCS.VerifyAnalyzerAsync(testCode);
+            await VerifyNoDiagnostics(testCode);
         }
 
         [Test]
@@ -229,22 +273,15 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var now = {|#0:DateTime.Now|};
-        var utcNow = {|#1:DateTime.UtcNow|};
-        var today = {|#2:DateTime.Today|};
+        var now = DateTime.Now;
+        var utcNow = DateTime.UtcNow;
+        var today = DateTime.Today;
         
         await context.CallActivityAsync(""SomeActivity"", new { now, utcNow, today });
     }
 }";
 
-            DiagnosticResult[] expected = new[]
-            {
-                VerifyCS.Diagnostic("DFA0001").WithLocation(0).WithMessage("Non-deterministic time API used in orchestrator."),
-                VerifyCS.Diagnostic("DFA0001").WithLocation(1).WithMessage("Non-deterministic time API used in orchestrator."),
-                VerifyCS.Diagnostic("DFA0001").WithLocation(2).WithMessage("Non-deterministic time API used in orchestrator.")
-            };
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyMultipleDFA0001Diagnostics(testCode, 3);
         }
 
         [Test]
@@ -262,15 +299,11 @@ public class TestOrchestrator
 
     private DateTime GetCurrentTime()
     {
-        return {|#0:DateTime.Now|}; // Should be detected even in helper methods within orchestrator class
+        return DateTime.Now; // Should be detected even in helper methods within orchestrator class
     }
 }";
 
-            DiagnosticResult expected = VerifyCS.Diagnostic("DFA0001")
-                .WithLocation(0)
-                .WithMessage("Non-deterministic time API used in orchestrator.");
-
-            await VerifyCS.VerifyAnalyzerAsync(testCode, expected);
+            await VerifyDFA0001Diagnostic(testCode);
         }
     }
 }
