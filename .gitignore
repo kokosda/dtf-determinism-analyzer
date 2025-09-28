@@ -464,3 +464,4 @@ sonar-project.properties
 .github/
 .specify/
 specs/
+.vscode/
