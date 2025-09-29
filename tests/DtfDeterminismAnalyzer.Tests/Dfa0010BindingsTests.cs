@@ -49,7 +49,7 @@ using Microsoft.Extensions.Logging;
         }
 
         [Test]
-        public async Task BlobTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithBlobTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -75,7 +75,7 @@ public class BlobTriggerAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task QueueTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithQueueTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -99,7 +99,7 @@ public class QueueTriggerAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task ServiceBusTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithServiceBusTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -123,7 +123,7 @@ public class ServiceBusTriggerAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task CosmosDBTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithCosmosDBTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -152,7 +152,7 @@ public class CosmosDBTriggerAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task HttpTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithHttpTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
@@ -194,7 +194,7 @@ public enum AuthorizationLevel
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task TableBindingInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithTableBindingInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -219,7 +219,7 @@ public class TableAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task ILoggerInOrchestratorShouldNotReportDFA0010()
+        public async Task RunAnalyzer_WithILoggerInOrchestrator_DoesNotReportDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -239,7 +239,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task ActivityTriggerInActivityFunctionShouldNotReportDFA0010()
+        public async Task RunAnalyzer_WithActivityTriggerInActivityFunction_DoesNotReportDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -268,7 +268,7 @@ public class BlobAttribute : Attribute
         }
 
         [Test]
-        public async Task MultipleBindingsInOrchestratorShouldReportMultipleDFA0010()
+        public async Task RunAnalyzer_WithMultipleBindingsInOrchestrator_ReportsMultipleDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -310,7 +310,7 @@ public class TableAttribute : Attribute
             await VerifyMultipleDFA0010Diagnostics(testCode, 3);        }
 
         [Test]
-        public async Task CustomBindingInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithCustomBindingInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -333,7 +333,7 @@ public class CustomBindingAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task EventHubTriggerInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithEventHubTriggerInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -358,7 +358,7 @@ public class EventHubTriggerAttribute : Attribute
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task SignalRBindingInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithSignalRBindingInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -388,7 +388,7 @@ public class SignalRMessage
             await VerifyDFA0010Diagnostic(testCode);        }
 
         [Test]
-        public async Task SqlBindingInOrchestratorShouldReportDFA0010()
+        public async Task RunAnalyzer_WithSqlBindingInOrchestrator_ReportsDFA0010()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

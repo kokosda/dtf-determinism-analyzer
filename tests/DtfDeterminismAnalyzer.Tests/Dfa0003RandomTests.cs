@@ -78,7 +78,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task RandomConstructorNoSeedInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomConstructorNoSeedInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -95,7 +95,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomSharedFieldInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomSharedFieldInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -113,7 +113,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomNextMethodInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomNextMethodInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -130,7 +130,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomNextDoubleMethodInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomNextDoubleMethodInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -147,7 +147,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomNextBytesMethodInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomNextBytesMethodInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -165,7 +165,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomWithFixedSeedInOrchestratorShouldNotReportDFA0003()
+        public async Task RunAnalyzer_WithRandomWithFixedSeedInOrchestrator_DoesNotReportDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -184,7 +184,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task RandomWithContextBasedSeedInOrchestratorShouldNotReportDFA0003()
+        public async Task RunAnalyzer_WithRandomWithContextBasedSeedInOrchestrator_DoesNotReportDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -204,7 +204,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task RandomInActivityFunctionShouldNotReportDFA0003()
+        public async Task RunAnalyzer_WithRandomInActivityFunction_DoesNotReportDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -222,7 +222,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task RandomInRegularClassShouldNotReportDFA0003()
+        public async Task RunAnalyzer_WithRandomInRegularClass_DoesNotReportDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class RandomService
@@ -240,7 +240,7 @@ public class RandomService
         }
 
         [Test]
-        public async Task MultipleRandomInOrchestratorShouldReportMultipleDFA0003()
+        public async Task RunAnalyzer_WithMultipleRandomInOrchestrator_ReportsMultipleDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -262,7 +262,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task RandomInNestedMethodInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomInNestedMethodInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -284,7 +284,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomSharedSeededInOrchestratorShouldNotReportDFA0003()
+        public async Task RunAnalyzer_WithRandomSharedSeededInOrchestrator_DoesNotReportDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -303,7 +303,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task RandomInConditionalBranchInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomInConditionalBranchInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -320,7 +320,7 @@ public class TestOrchestrator
             await VerifyDFA0003Diagnostic(testCode);        }
 
         [Test]
-        public async Task RandomWithVariableSeedInOrchestratorShouldReportDFA0003()
+        public async Task RunAnalyzer_WithRandomWithVariableSeedInOrchestrator_ReportsDFA0003()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

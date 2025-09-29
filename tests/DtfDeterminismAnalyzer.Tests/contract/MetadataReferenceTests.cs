@@ -13,7 +13,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class MetadataReferenceTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
     {
         [Test]
-        public void CreateAzureFunctionsMetadataReferences_Should_Return_Valid_References()
+        public void CreateAzureFunctionsMetadataReferences_WithValidAssemblies_ReturnsValidReferences()
         {
             // Act
             var references = CreateAzureFunctionsMetadataReferences().ToList();
@@ -31,7 +31,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void CreateAzureFunctionsMetadataReferences_Should_Handle_Missing_Assemblies_Gracefully()
+        public void CreateAzureFunctionsMetadataReferences_WithMissingAssemblies_HandlesGracefully()
         {
             // This test ensures that if some assemblies are not available,
             // the method doesn't throw exceptions and returns what it can
@@ -46,7 +46,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void CreateTestCompilationWithAssemblyReferences_Should_Create_Valid_Compilation()
+        public void CreateTestCompilationWithAssemblyReferences_WithValidReferences_CreatesValidCompilation()
         {
             // Arrange
             const string testCode = @"
@@ -87,7 +87,7 @@ public class TestFunction
         }
 
         [Test]
-        public void MetadataReference_Creation_Should_Be_Deterministic()
+        public void CreateMetadataReference_WithSameInput_IsDeterministic()
         {
             // Act - call the method multiple times
             var references1 = CreateAzureFunctionsMetadataReferences().ToList();

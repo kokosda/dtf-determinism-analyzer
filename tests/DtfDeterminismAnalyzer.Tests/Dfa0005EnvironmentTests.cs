@@ -78,7 +78,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task EnvironmentGetEnvironmentVariableInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentGetEnvironmentVariableInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -94,7 +94,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentGetEnvironmentVariablesInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentGetEnvironmentVariablesInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -110,7 +110,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentSetEnvironmentVariableInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentSetEnvironmentVariableInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -127,7 +127,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentUserNameInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentUserNameInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -143,7 +143,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentMachineNameInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentMachineNameInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -159,7 +159,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentGetEnvironmentVariableInActivityFunctionShouldNotReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentGetEnvironmentVariableInActivityFunction_DoesNotReportDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -177,7 +177,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task EnvironmentGetEnvironmentVariableInRegularClassShouldNotReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentGetEnvironmentVariableInRegularClass_DoesNotReportDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class ConfigurationService
@@ -193,7 +193,7 @@ public class ConfigurationService
         }
 
         [Test]
-        public async Task MultipleEnvironmentAccessInOrchestratorShouldReportMultipleDFA0005()
+        public async Task RunAnalyzer_WithMultipleEnvironmentAccessInOrchestrator_ReportsMultipleDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -213,7 +213,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task EnvironmentAccessInNestedMethodInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentAccessInNestedMethodInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -235,7 +235,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentExpandEnvironmentVariablesInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentExpandEnvironmentVariablesInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -251,7 +251,7 @@ public class TestOrchestrator
             await VerifyDFA0005Diagnostic(testCode);        }
 
         [Test]
-        public async Task EnvironmentCurrentDirectoryInOrchestratorShouldReportDFA0005()
+        public async Task RunAnalyzer_WithEnvironmentCurrentDirectoryInOrchestrator_ReportsDFA0005()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

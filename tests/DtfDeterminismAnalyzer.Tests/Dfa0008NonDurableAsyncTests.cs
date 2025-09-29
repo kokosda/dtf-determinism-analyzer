@@ -56,7 +56,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task TaskDelayInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithTaskDelayInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -73,7 +73,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithHttpClientGetAsyncInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -93,7 +93,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task TaskRunInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithTaskRunInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -110,7 +110,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task TaskFromResultInOrchestratorShouldNotReportDFA0008()
+        public async Task RunAnalyzer_WithTaskFromResultInOrchestrator_DoesNotReportDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -128,7 +128,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task ConfigureAwaitFalseInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithConfigureAwaitFalseInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -145,7 +145,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task TaskWhenAllNonDurableTasksInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithTaskWhenAllNonDurableTasksInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -166,7 +166,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task TaskWhenAllDurableTasksInOrchestratorShouldNotReportDFA0008()
+        public async Task RunAnalyzer_WithTaskWhenAllDurableTasksInOrchestrator_DoesNotReportDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -186,7 +186,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DurableCreateTimerInOrchestratorShouldNotReportDFA0008()
+        public async Task RunAnalyzer_WithDurableCreateTimerInOrchestrator_DoesNotReportDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -205,7 +205,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task TaskDelayInActivityFunctionShouldNotReportDFA0008()
+        public async Task RunAnalyzer_WithTaskDelayInActivityFunction_DoesNotReportDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -223,7 +223,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task MultipleNonDurableOperationsInOrchestratorShouldReportMultipleDFA0008()
+        public async Task RunAnalyzer_WithMultipleNonDurableOperationsInOrchestrator_ReportsMultipleDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -243,7 +243,7 @@ public class TestOrchestrator
             await VerifyMultipleDFA0008Diagnostics(testCode, 3);        }
 
         [Test]
-        public async Task NonDurableOperationInNestedMethodInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithNonDurableOperationInNestedMethodInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -265,7 +265,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task TaskYieldInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithTaskYieldInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -282,7 +282,7 @@ public class TestOrchestrator
             await VerifyDFA0008Diagnostic(testCode);        }
 
         [Test]
-        public async Task CustomAsyncMethodInOrchestratorShouldReportDFA0008()
+        public async Task RunAnalyzer_WithCustomAsyncMethodInOrchestrator_ReportsDFA0008()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

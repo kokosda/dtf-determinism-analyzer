@@ -15,7 +15,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class AnalyzerValidationTests
     {
         [Test]
-        public async Task AnalyzerValidation_Should_Report_Diagnostics_Without_Compilation_Errors()
+        public async Task RunAnalyzerValidation_WithValidCode_ReportsDiagnosticsWithoutCompilationErrors()
         {
             // Contract: Analyzer must report diagnostics on compiled code, not compilation failures
             string testCode = @"
@@ -55,7 +55,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task AnalyzerValidation_Should_Distinguish_Compilation_Errors_From_Analyzer_Diagnostics()
+        public async Task RunAnalyzerValidation_WithInvalidCode_DistinguishesCompilationErrorsFromAnalyzerDiagnostics()
         {
             // Contract: Framework must separate compilation diagnostics from analyzer diagnostics
             string validTestCode = @"
@@ -89,7 +89,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task AnalyzerValidation_Should_Handle_Multiple_Azure_Functions_Attributes()
+        public async Task RunAnalyzerValidation_WithMultipleAzureFunctionsAttributes_HandlesCorrectly()
         {
             // Contract: Framework must handle complex Azure Functions scenarios
             string testCode = @"
@@ -142,7 +142,7 @@ public class ComplexFunctionApp
         }
 
         [Test]
-        public async Task AnalyzerValidation_Should_Preserve_Expected_Diagnostic_Locations()
+        public async Task RunAnalyzerValidation_WithDiagnostics_PreservesExpectedLocations()
         {
             // Contract: Diagnostic locations must be preserved through compilation process
             string testCode = @"

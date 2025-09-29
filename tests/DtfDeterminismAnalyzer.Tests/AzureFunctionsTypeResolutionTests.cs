@@ -17,7 +17,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class AzureFunctionsTypeResolutionTests
     {
         [Test]
-        public async Task TypeResolution_Should_Resolve_All_WebJobs_Core_Types()
+        public async Task ResolveTypes_WithWebJobsCoreTypes_ResolvesAllSuccessfully()
         {
             // Integration contract: All Microsoft.Azure.WebJobs types must be resolvable
             string testCode = @"
@@ -50,7 +50,7 @@ public class WebJobsTypesTest
         }
 
         [Test]
-        public async Task TypeResolution_Should_Resolve_All_DurableTask_Types()
+        public async Task ResolveTypes_WithDurableTaskTypes_ResolvesAllSuccessfully()
         {
             // Integration contract: All DurableTask extension types must be resolvable
             string testCode = @"
@@ -100,7 +100,7 @@ public class DurableTaskTypesTest
         }
 
         [Test]
-        public async Task TypeResolution_Should_Resolve_All_AspNetCore_Types()
+        public async Task ResolveTypes_WithAspNetCoreTypes_ResolvesAllSuccessfully()
         {
             // Integration contract: All ASP.NET Core types used in Azure Functions must be resolvable
             string testCode = @"
@@ -145,7 +145,7 @@ public class AspNetCoreTypesTest
         }
 
         [Test]
-        public async Task TypeResolution_Should_Resolve_Extensions_Logging_Types()
+        public async Task ResolveTypes_WithExtensionsLoggingTypes_ResolvesAllSuccessfully()
         {
             // Integration contract: Microsoft.Extensions.Logging types must be resolvable
             string testCode = @"
@@ -185,7 +185,7 @@ public class LoggingTypesTest
         }
 
         [Test]
-        public void TypeResolution_Should_Have_Consistent_Assembly_Loading()
+        public void ResolveTypes_WithConsistentInput_HasConsistentAssemblyLoading()
         {
             // Integration contract: Assembly loading must be consistent across test runs
             var testBase1 = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
@@ -207,7 +207,7 @@ public class LoggingTypesTest
         }
 
         [Test]
-        public async Task TypeResolution_Should_Support_Complex_Inheritance_Scenarios()
+        public async Task ResolveTypes_WithComplexInheritanceScenarios_SupportsCorrectly()
         {
             // Integration contract: Complex type inheritance scenarios must be supported
             string testCode = @"

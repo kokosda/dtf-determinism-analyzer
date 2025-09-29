@@ -46,7 +46,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task OrchestrationTriggerAttributeShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithOrchestrationTriggerAttribute_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -64,7 +64,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task ActivityTriggerAttributeShouldNotDetectAsOrchestrator()
+        public async Task DetectOrchestrator_WithActivityTriggerAttribute_DoesNotDetectAsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -84,7 +84,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task HttpTriggerFunctionShouldNotDetectAsOrchestrator()
+        public async Task DetectOrchestrator_WithHttpTriggerFunction_DoesNotDetectAsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
@@ -107,7 +107,7 @@ public class TestHttpFunction
         }
 
         [Test]
-        public async Task OrchestrationTriggerWithDurableOrchestrationContextBaseShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithOrchestrationTriggerWithDurableOrchestrationContextBase_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -125,7 +125,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task MultipleParametersWithOrchestrationTriggerShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithMultipleParametersWithOrchestrationTrigger_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.Extensions.Logging;
@@ -148,7 +148,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StaticMethodWithOrchestrationTriggerShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithStaticMethodWithOrchestrationTrigger_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public static class TestOrchestrator
@@ -166,7 +166,7 @@ public static class TestOrchestrator
         }
 
         [Test]
-        public async Task OrchestrationTriggerWithReturnValueShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithOrchestrationTriggerWithReturnValue_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -185,7 +185,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task FunctionNameWithoutOrchestrationTriggerShouldNotDetectAsOrchestrator()
+        public async Task DetectOrchestrator_WithFunctionNameWithoutOrchestrationTrigger_DoesNotDetectAsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using Microsoft.AspNetCore.Http;
@@ -207,7 +207,7 @@ public class TestFunction
         }
 
         [Test]
-        public async Task OrchestrationTriggerParameterWithoutFunctionNameShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithOrchestrationTriggerParameterWithoutFunctionName_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -225,7 +225,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task NestedClassWithOrchestrationTriggerShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithNestedClassWithOrchestrationTrigger_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class OuterClass
@@ -246,7 +246,7 @@ public class OuterClass
         }
 
         [Test]
-        public async Task MultipleOrchestratorsInSameClassShouldDetectAll()
+        public async Task DetectOrchestrator_WithMultipleOrchestratorsInSameClass_DetectsAll()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrators
@@ -278,7 +278,7 @@ public class TestOrchestrators
         }
 
         [Test]
-        public async Task OrchestrationTriggerWithCustomContextInterfaceShouldDetectOrchestrator()
+        public async Task DetectOrchestrator_WithOrchestrationTriggerWithCustomContextInterface_DetectsOrchestrator()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public interface ICustomOrchestrationContext : IDurableOrchestrationContext

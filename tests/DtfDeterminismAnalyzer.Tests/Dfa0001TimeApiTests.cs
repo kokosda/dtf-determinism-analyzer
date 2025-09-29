@@ -20,7 +20,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 ";
 
         [Test]
-        public async Task DateTimeNowInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeNowInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -109,7 +109,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeUtcNowInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeUtcNowInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -126,7 +126,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeTodayInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeTodayInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -143,7 +143,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeOffsetNowInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeOffsetNowInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -160,7 +160,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeOffsetUtcNowInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeOffsetUtcNowInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -177,7 +177,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StopwatchStartNewInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithStopwatchStartNewInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Diagnostics;
@@ -196,7 +196,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StopwatchConstructorInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithStopwatchConstructorInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Diagnostics;
@@ -216,7 +216,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StopwatchElapsedMillisecondsInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithStopwatchElapsedMillisecondsInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Diagnostics;
@@ -237,7 +237,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeNowInActivityFunctionShouldNotReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeNowInActivityFunction_DoesNotReportDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -254,7 +254,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task DateTimeUtcNowInRegularClassShouldNotReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeUtcNowInRegularClass_DoesNotReportDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class RegularClass
@@ -269,7 +269,7 @@ public class RegularClass
         }
 
         [Test]
-        public async Task ContextCurrentUtcDateTimeInOrchestratorShouldNotReportDFA0001()
+        public async Task RunAnalyzer_WithContextCurrentUtcDateTimeInOrchestrator_DoesNotReportDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -286,7 +286,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task MultipleDateTimeViolationsInOrchestratorShouldReportMultipleDFA0001()
+        public async Task RunAnalyzer_WithMultipleDateTimeViolationsInOrchestrator_ReportsMultipleDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -306,7 +306,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task DateTimeNowInNestedMethodInOrchestratorShouldReportDFA0001()
+        public async Task RunAnalyzer_WithDateTimeNowInNestedMethodInOrchestrator_ReportsDFA0001()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

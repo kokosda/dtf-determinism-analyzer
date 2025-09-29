@@ -78,7 +78,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task GuidNewGuidInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -95,7 +95,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidAssignedToVariableInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidAssignedToVariableInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -113,7 +113,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidInMethodCallInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInMethodCallInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -129,7 +129,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidInPropertyInitializerInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInPropertyInitializerInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -146,7 +146,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidInActivityFunctionShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInActivityFunction_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -163,7 +163,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task GuidNewGuidInRegularClassShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInRegularClass_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class RegularService
@@ -178,7 +178,7 @@ public class RegularService
         }
 
         [Test]
-        public async Task ContextNewGuidInOrchestratorShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithContextNewGuidInOrchestrator_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -195,7 +195,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task MultipleGuidNewGuidInOrchestratorShouldReportMultipleDFA0002()
+        public async Task RunAnalyzer_WithMultipleGuidNewGuidInOrchestrator_ReportsMultipleDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -215,7 +215,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidInNestedMethodInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInNestedMethodInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -237,7 +237,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidConstructorWithByteArrayInOrchestratorShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithGuidConstructorWithByteArrayInOrchestrator_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -256,7 +256,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidParseInOrchestratorShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithGuidParseInOrchestrator_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -274,7 +274,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidEmptyInOrchestratorShouldNotReportDFA0002()
+        public async Task RunAnalyzer_WithGuidEmptyInOrchestrator_DoesNotReportDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -292,7 +292,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task GuidNewGuidInConditionalExpressionInOrchestratorShouldReportDFA0002()
+        public async Task RunAnalyzer_WithGuidNewGuidInConditionalExpressionInOrchestrator_ReportsDFA0002()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

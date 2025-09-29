@@ -15,7 +15,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class CompilationConfigurationTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
     {
         [Test]
-        public void GetParseOptions_Should_Configure_CSharp12_With_Proper_Settings()
+        public void GetParseOptions_WithDefaultSettings_ConfiguresCSharp12WithProperSettings()
         {
             // Act
             var parseOptions = GetParseOptions();
@@ -31,7 +31,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void GetCompilationOptions_Should_Configure_Proper_Settings()
+        public void GetCompilationOptions_WithDefaultSettings_ConfiguresProperSettings()
         {
             // Act
             var compilationOptions = GetCompilationOptions();
@@ -57,7 +57,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void GetCompilationOptions_Should_Configure_Critical_Diagnostic_Settings()
+        public void GetCompilationOptions_WithDiagnosticSettings_ConfiguresCriticalDiagnosticSettings()
         {
             // Act
             var compilationOptions = GetCompilationOptions();
@@ -87,7 +87,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void GetAnalyzerOptions_Should_Provide_Valid_Configuration()
+        public void GetAnalyzerOptions_WithDefaults_ProvidesValidConfiguration()
         {
             // Act
             var analyzerOptions = GetAnalyzerOptions();
@@ -101,7 +101,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void CreateSolutionTransform_Should_Provide_Valid_Transform_Function()
+        public void CreateSolutionTransform_WithConfiguration_ProvidesValidTransformFunction()
         {
             // Act
             var transform = CreateSolutionTransform();
@@ -135,7 +135,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void GetStandardReferenceAssemblies_Should_Return_Configured_References()
+        public void GetStandardReferenceAssemblies_WithDefaults_ReturnsConfiguredReferences()
         {
             // Act
             var referenceAssemblies = GetStandardReferenceAssemblies();
@@ -148,7 +148,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public async Task Configuration_Methods_Should_Work_Together_For_Valid_Compilation()
+        public async Task RunConfigurationMethods_WithValidSetup_WorksTogether()
         {
             // Arrange
             const string testCode = @"

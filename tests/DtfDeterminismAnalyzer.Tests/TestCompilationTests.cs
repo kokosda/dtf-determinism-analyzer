@@ -16,7 +16,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class TestCompilationTests
     {
         [Test]
-        public async Task TestCompilation_Should_Resolve_FunctionName_Attribute()
+        public async Task CreateTestCompilation_WithFunctionNameAttribute_ResolvesSuccessfully()
         {
             // Contract: Test compilation must resolve FunctionName attribute from Microsoft.Azure.WebJobs
             string testCode = @"
@@ -45,7 +45,7 @@ public class TestClass
         }
 
         [Test]
-        public async Task TestCompilation_Should_Resolve_OrchestrationTrigger_Attribute()
+        public async Task CreateTestCompilation_WithOrchestrationTriggerAttribute_ResolvesSuccessfully()
         {
             // Contract: Test compilation must resolve OrchestrationTrigger from DurableTask extensions
             string testCode = @"
@@ -74,7 +74,7 @@ public class TestClass
         }
 
         [Test]
-        public async Task TestCompilation_Should_Resolve_HttpTrigger_Types()
+        public async Task CreateTestCompilation_WithHttpTriggerTypes_ResolvesSuccessfully()
         {
             // Contract: Test compilation must resolve HTTP trigger types from ASP.NET Core
             string testCode = @"
@@ -109,7 +109,7 @@ public class TestClass
         }
 
         [Test]
-        public async Task TestCompilation_Should_Resolve_ILogger_Interface()
+        public async Task CreateTestCompilation_WithILoggerInterface_ResolvesSuccessfully()
         {
             // Contract: Test compilation must resolve ILogger from Microsoft.Extensions.Logging
             string testCode = @"
@@ -142,7 +142,7 @@ public class TestClass
         }
 
         [Test]
-        public void TestCompilation_Should_Use_CSharp_12_Language_Version()
+        public void GetParseOptions_WithDefaultConfiguration_UsesCSharp12LanguageVersion()
         {
             // Contract: Test compilation must use C# 12.0 for compatibility
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();

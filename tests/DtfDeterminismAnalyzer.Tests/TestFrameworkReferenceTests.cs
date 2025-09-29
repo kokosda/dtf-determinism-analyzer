@@ -16,7 +16,7 @@ namespace DtfDeterminismAnalyzer.Tests
     public class TestFrameworkReferenceTests
     {
         [Test]
-        public void TestFramework_Should_Include_AzureFunctions_WebJobs_Assembly()
+        public void TestFramework_WithDefaultSetup_IncludesAzureFunctionsWebJobsAssembly()
         {
             // Contract: TestFrameworkConfiguration must include Microsoft.Azure.WebJobs assembly
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
@@ -30,7 +30,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void TestFramework_Should_Include_DurableTask_Extensions_Assembly()
+        public void TestFramework_WithDefaultSetup_IncludesDurableTaskExtensionsAssembly()
         {
             // Contract: TestFrameworkConfiguration must include DurableTask extensions
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
@@ -44,7 +44,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void TestFramework_Should_Include_AspNetCore_Mvc_Assembly()
+        public void TestFramework_WithDefaultSetup_IncludesAspNetCoreMvcAssembly()
         {
             // Contract: TestFrameworkConfiguration must include ASP.NET Core MVC types
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
@@ -58,7 +58,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void TestFramework_Should_Include_Extensions_Logging_Assembly()
+        public void TestFramework_WithDefaultSetup_IncludesExtensionsLoggingAssembly()
         {
             // Contract: TestFrameworkConfiguration must include Microsoft.Extensions.Logging
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
@@ -72,7 +72,7 @@ namespace DtfDeterminismAnalyzer.Tests
         }
 
         [Test]
-        public void TestFramework_Should_Use_Net80_ReferenceAssemblies()
+        public void TestFramework_WithDefaultSetup_UsesNet80ReferenceAssemblies()
         {
             // Contract: TestFrameworkConfiguration must use .NET 8.0 reference assemblies
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();

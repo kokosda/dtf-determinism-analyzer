@@ -80,7 +80,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task FileReadAllTextInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithFileReadAllTextInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -96,7 +96,7 @@ public class TestOrchestrator
             await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
-        public async Task FileWriteAllTextInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithFileWriteAllTextInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -113,7 +113,7 @@ public class TestOrchestrator
             await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
-        public async Task HttpClientGetAsyncInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithHttpClientGetAsyncInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -132,7 +132,7 @@ public class TestOrchestrator
             await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
-        public async Task FileStreamConstructorInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithFileStreamConstructorInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -150,7 +150,7 @@ public class TestOrchestrator
             await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
-        public async Task DirectoryGetFilesInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithDirectoryGetFilesInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -166,7 +166,7 @@ public class TestOrchestrator
             await VerifyDFA0004Diagnostic(testCode);        }
 
         [Test]
-        public async Task FileIOInActivityFunctionShouldNotReportDFA0004()
+        public async Task RunAnalyzer_WithFileIOInActivityFunction_DoesNotReportDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -184,7 +184,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task DurableHttpCallHttpAsyncInOrchestratorShouldNotReportDFA0004()
+        public async Task RunAnalyzer_WithDurableHttpCallHttpAsyncInOrchestrator_DoesNotReportDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -203,7 +203,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task MultipleIOOperationsInOrchestratorShouldReportMultipleDFA0004()
+        public async Task RunAnalyzer_WithMultipleIOOperationsInOrchestrator_ReportsMultipleDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -224,7 +224,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task PathOperationsInOrchestratorShouldNotReportDFA0004()
+        public async Task RunAnalyzer_WithPathOperationsInOrchestrator_DoesNotReportDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -243,7 +243,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task IOInNestedMethodInOrchestratorShouldReportDFA0004()
+        public async Task RunAnalyzer_WithIOInNestedMethodInOrchestrator_ReportsDFA0004()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

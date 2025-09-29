@@ -48,7 +48,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task ThreadStartInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithThreadStartInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -67,7 +67,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task ThreadPoolQueueUserWorkItemInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithThreadPoolQueueUserWorkItemInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -85,7 +85,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task ParallelForEachInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithParallelForEachInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -104,7 +104,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task ParallelForInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithParallelForInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -122,7 +122,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task LockStatementInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithLockStatementInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -144,7 +144,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task MonitorEnterInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithMonitorEnterInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -172,7 +172,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task MutexWaitOneInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithMutexWaitOneInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -198,7 +198,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task ReaderWriterLockAcquireReaderLockInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithReaderWriterLockAcquireReaderLockInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -223,7 +223,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task CancellationTokenRegisterInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithCancellationTokenRegisterInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -240,7 +240,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task AutoResetEventWaitOneInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithAutoResetEventWaitOneInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -259,7 +259,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task ThreadingInActivityFunctionShouldNotReportDFA0009()
+        public async Task RunAnalyzer_WithThreadingInActivityFunction_DoesNotReportDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -281,7 +281,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task MultipleThreadingAPIsInOrchestratorShouldReportMultipleDFA0009()
+        public async Task RunAnalyzer_WithMultipleThreadingAPIsInOrchestrator_ReportsMultipleDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -307,7 +307,7 @@ public class TestOrchestrator
             await VerifyMultipleDFA0009Diagnostics(testCode, 2);        }
 
         [Test]
-        public async Task ThreadingAPIInNestedMethodInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithThreadingAPIInNestedMethodInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -332,7 +332,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task SynchronizationContextPostInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithSynchronizationContextPostInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -351,7 +351,7 @@ public class TestOrchestrator
             await VerifyDFA0009Diagnostic(testCode);        }
 
         [Test]
-        public async Task InterlockedExchangeInOrchestratorShouldReportDFA0009()
+        public async Task RunAnalyzer_WithInterlockedExchangeInOrchestrator_ReportsDFA0009()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator

@@ -56,7 +56,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         }
 
         [Test]
-        public async Task StaticFieldWriteInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticFieldWriteInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -74,7 +74,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticFieldReadMutableInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticFieldReadMutableInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -92,7 +92,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticPropertyWriteInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticPropertyWriteInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -110,7 +110,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticCollectionModificationInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticCollectionModificationInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
@@ -131,7 +131,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticReadonlyConstInOrchestratorShouldNotReportDFA0006()
+        public async Task RunAnalyzer_WithStaticReadonlyConstInOrchestrator_DoesNotReportDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -153,7 +153,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StaticImmutableCollectionInOrchestratorShouldNotReportDFA0006()
+        public async Task RunAnalyzer_WithStaticImmutableCollectionInOrchestrator_DoesNotReportDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
@@ -176,7 +176,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StaticFieldInActivityFunctionShouldNotReportDFA0006()
+        public async Task RunAnalyzer_WithStaticFieldInActivityFunction_DoesNotReportDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestActivity
@@ -196,7 +196,7 @@ public class TestActivity
         }
 
         [Test]
-        public async Task StaticFieldInRegularClassShouldNotReportDFA0006()
+        public async Task RunAnalyzer_WithStaticFieldInRegularClass_DoesNotReportDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class StatefulService
@@ -214,7 +214,7 @@ public class StatefulService
         }
 
         [Test]
-        public async Task MultipleStaticAccessInOrchestratorShouldReportMultipleDFA0006()
+        public async Task RunAnalyzer_WithMultipleStaticAccessInOrchestrator_ReportsMultipleDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -236,7 +236,7 @@ public class TestOrchestrator
         }
 
         [Test]
-        public async Task StaticAccessInNestedMethodInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticAccessInNestedMethodInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
@@ -260,7 +260,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticDictionaryModificationInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticDictionaryModificationInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 using System.Collections.Generic;
@@ -281,7 +281,7 @@ public class TestOrchestrator
             await VerifyDFA0006Diagnostic(testCode);        }
 
         [Test]
-        public async Task StaticLazyAccessInOrchestratorShouldReportDFA0006()
+        public async Task RunAnalyzer_WithStaticLazyAccessInOrchestrator_ReportsDFA0006()
         {
             string testCode = OrchestrationTriggerUsing + @"
 public class TestOrchestrator
