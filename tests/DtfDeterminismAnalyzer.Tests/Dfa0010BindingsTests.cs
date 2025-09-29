@@ -28,7 +28,7 @@ using Microsoft.Extensions.Logging;
             var result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
-            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected."), "Expected correct diagnostic message");
+            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected in orchestrator"), "Expected correct diagnostic message");
         }
 
         private async Task VerifyNoDiagnostics(string testCode)
@@ -44,7 +44,7 @@ using Microsoft.Extensions.Logging;
             foreach (var diagnostic in result.AnalyzerDiagnostics)
             {
                 Assert.That(diagnostic.Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
-                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected."), "Expected correct diagnostic message");
+                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected in orchestrator"), "Expected correct diagnostic message");
             }
         }
 
@@ -57,13 +57,19 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] Stream blob)
+        [BlobTrigger(""container/{name}"")] Stream blob)
     {
         // Direct blob binding should not be used in orchestrators
         using var reader = new StreamReader(blob);
         var content = await reader.ReadToEndAsync();
         await context.CallActivityAsync(""ProcessBlob"", content);
     }
+}
+
+public class BlobTriggerAttribute : Attribute
+{
+    public string Path { get; }
+    public BlobTriggerAttribute(string path) => Path = path;
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -77,11 +83,17 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string queueItem)
+        [QueueTrigger(""myqueue"")] string queueItem)
     {
         // Direct queue binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessQueueItem"", queueItem);
     }
+}
+
+public class QueueTriggerAttribute : Attribute
+{
+    public string QueueName { get; }
+    public QueueTriggerAttribute(string queueName) => QueueName = queueName;
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -95,11 +107,17 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string message)
+        [ServiceBusTrigger(""myqueue"")] string message)
     {
         // Direct Service Bus binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessMessage"", message);
     }
+}
+
+public class ServiceBusTriggerAttribute : Attribute
+{
+    public string QueueName { get; }
+    public ServiceBusTriggerAttribute(string queueName) => QueueName = queueName;
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -113,10 +131,21 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string document)
+        [CosmosDBTrigger(""databaseName"", ""collectionName"")] string document)
     {
         // Direct Cosmos DB binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessDocument"", document);
+    }
+}
+
+public class CosmosDBTriggerAttribute : Attribute
+{
+    public string DatabaseName { get; }
+    public string CollectionName { get; }
+    public CosmosDBTriggerAttribute(string databaseName, string collectionName)
+    {
+        DatabaseName = databaseName;
+        CollectionName = collectionName;
     }
 }";
 
@@ -134,12 +163,32 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task<IActionResult> RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, ""get"", ""post"")] HttpRequest req)
     {
         // Direct HTTP binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessRequest"", ""data"");
         return new OkResult();
     }
+}
+
+public class HttpTriggerAttribute : Attribute
+{
+    public AuthorizationLevel AuthLevel { get; }
+    public string[] Methods { get; }
+    public HttpTriggerAttribute(AuthorizationLevel authLevel, params string[] methods)
+    {
+        AuthLevel = authLevel;
+        Methods = methods;
+    }
+}
+
+public enum AuthorizationLevel
+{
+    Anonymous,
+    User,
+    Function,
+    System,
+    Admin
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -153,12 +202,18 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] IAsyncCollector<dynamic> table)
+        [Table(""mytable"")] IAsyncCollector<dynamic> table)
     {
         // Direct table binding should not be used in orchestrators
         await table.AddAsync(new { Data = ""test"" });
         await context.CallActivityAsync(""ProcessTable"", ""data"");
     }
+}
+
+public class TableAttribute : Attribute
+{
+    public string TableName { get; }
+    public TableAttribute(string tableName) => TableName = tableName;
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -201,6 +256,12 @@ public class TestActivity
         log.LogInformation($""Processing: {input}"");
         return ""processed: "" + content;
     }
+}
+
+public class BlobAttribute : Attribute
+{
+    public string Path { get; }
+    public BlobAttribute(string path) => Path = path;
 }";
 
             await VerifyNoDiagnostics(testCode);
@@ -215,9 +276,9 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string queueItem,
-        [ ] Stream blob,
-        [ ] IAsyncCollector<dynamic> table)
+        [QueueTrigger(""queue1"")] string queueItem,
+        [BlobTrigger(""container/{name}"")] Stream blob,
+        [Table(""mytable"")] IAsyncCollector<dynamic> table)
     {
         // Multiple direct bindings should all be detected
         using var reader = new StreamReader(blob);
@@ -226,6 +287,24 @@ public class TestOrchestrator
         await table.AddAsync(new { Data = queueItem, Content = content });
         await context.CallActivityAsync(""ProcessAll"", ""data"");
     }
+}
+
+public class QueueTriggerAttribute : Attribute
+{
+    public string QueueName { get; }
+    public QueueTriggerAttribute(string queueName) => QueueName = queueName;
+}
+
+public class BlobTriggerAttribute : Attribute
+{
+    public string Path { get; }
+    public BlobTriggerAttribute(string path) => Path = path;
+}
+
+public class TableAttribute : Attribute
+{
+    public string TableName { get; }
+    public TableAttribute(string tableName) => TableName = tableName;
 }";
 
             await VerifyMultipleDFA0010Diagnostics(testCode, 3);        }
@@ -239,7 +318,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string customData)
+        [CustomBinding(""config"")] string customData)
     {
         // Custom bindings should also be detected
         await context.CallActivityAsync(""ProcessCustom"", customData);
@@ -262,11 +341,18 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] string eventData)
+        [EventHubTrigger(""eventhub"", Connection = ""EventHubConnection"")] string eventData)
     {
         // Direct Event Hub binding should not be used in orchestrators
         await context.CallActivityAsync(""ProcessEvent"", eventData);
     }
+}
+
+public class EventHubTriggerAttribute : Attribute
+{
+    public string EventHubName { get; }
+    public string Connection { get; set; }
+    public EventHubTriggerAttribute(string eventHubName) => EventHubName = eventHubName;
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }
@@ -280,7 +366,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] IAsyncCollector<SignalRMessage> signalRMessages)
+        [SignalR(HubName = ""testhub"")] IAsyncCollector<SignalRMessage> signalRMessages)
     {
         // Direct SignalR binding should not be used in orchestrators
         await signalRMessages.AddAsync(new SignalRMessage { Target = ""notify"", Arguments = new[] { ""test"" } });
@@ -310,17 +396,22 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator(
         [OrchestrationTrigger] IDurableOrchestrationContext context,
-        [ ] IEnumerable<dynamic> sqlData)
+        [Sql(""SELECT * FROM table"", ""SqlConnection"")] string sqlData)
     {
         // Direct SQL binding should not be used in orchestrators
-        var results = sqlData.ToList();
-        await context.CallActivityAsync(""ProcessSqlResults"", results.Count);
+        await context.CallActivityAsync(""ProcessSqlResults"", sqlData);
     }
 }
 
 public class SqlAttribute : Attribute
 {
-    public SqlAttribute(string commandText, string connectionStringSetting) { }
+    public string CommandText { get; }
+    public string ConnectionStringSetting { get; }
+    public SqlAttribute(string commandText, string connectionStringSetting) 
+    { 
+        CommandText = commandText;
+        ConnectionStringSetting = connectionStringSetting;
+    }
 }";
 
             await VerifyDFA0010Diagnostic(testCode);        }

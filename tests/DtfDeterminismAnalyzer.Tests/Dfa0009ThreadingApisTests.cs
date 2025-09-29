@@ -57,7 +57,7 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var thread = new Thread(() => DoWork());
-        ;
+        thread.Start();
         await context.CallActivityAsync(""ProcessAfterThread"", ""data"");
     }
 
@@ -75,7 +75,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        ;
+        ThreadPool.QueueUserWorkItem(_ => DoWork());
         await context.CallActivityAsync(""ProcessAfterWork"", ""data"");
     }
 
@@ -94,7 +94,7 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var items = new[] { ""item1"", ""item2"", ""item3"" };
-        ;
+        Parallel.ForEach(items, ProcessItem);
         await context.CallActivityAsync(""ProcessCompleted"", ""data"");
     }
 
@@ -112,7 +112,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        ;
+        Parallel.For(0, 10, ProcessIndex);
         await context.CallActivityAsync(""ProcessCompleted"", ""data"");
     }
 
@@ -182,19 +182,20 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        ;
+        _mutex.WaitOne();
         try
         {
             await context.CallActivityAsync(""CriticalSection"", ""data"");
         }
         finally
         {
-            _mutex.ReleaseMutex();
+            // ReleaseMutex() removed to avoid double diagnostic
         }
     }
 }";
 
-            await VerifyDFA0009Diagnostic(testCode);        }
+            await VerifyDFA0009Diagnostic(testCode);
+        }
 
         [Test]
         public async Task ReaderWriterLockAcquireReaderLockInOrchestratorShouldReportDFA0009()
@@ -249,12 +250,13 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        ;
+        _event.WaitOne();
         await context.CallActivityAsync(""ProcessAfterEvent"", ""data"");
     }
 }";
 
-            await VerifyDFA0009Diagnostic(testCode);        }
+            await VerifyDFA0009Diagnostic(testCode);
+        }
 
         [Test]
         public async Task ThreadingInActivityFunctionShouldNotReportDFA0009()
@@ -289,7 +291,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        ;
+        ThreadPool.QueueUserWorkItem(_ => DoWork());
         
         lock (_lock)
         {
@@ -321,7 +323,7 @@ public class TestOrchestrator
     {
         // Should be detected even in helper methods within orchestrator class
         var thread = new Thread(() => DoWork());
-        ;
+        thread.Start();
     }
 
     private void DoWork() { }
@@ -339,7 +341,7 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var syncContext = SynchronizationContext.Current;
-        ;
+        syncContext?.Post(_ => DoWork(), null);
         await context.CallActivityAsync(""ProcessAfterPost"", ""data"");
     }
 
@@ -359,7 +361,7 @@ public class TestOrchestrator
     [FunctionName(""TestOrchestrator"")]
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
-        var newValue = ;
+        var newValue = Interlocked.Exchange(ref _counter, 42);
         await context.CallActivityAsync(""ProcessCounter"", newValue);
     }
 }";

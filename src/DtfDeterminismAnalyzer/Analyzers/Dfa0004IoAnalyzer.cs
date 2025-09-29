@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -22,12 +24,19 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.SimpleMemberAccessExpression);
-            context.RegisterSyntaxNodeAction(AnalyzeInvocationExpression, SyntaxKind.InvocationExpression);
-            context.RegisterSyntaxNodeAction(AnalyzeObjectCreationExpression, SyntaxKind.ObjectCreationExpression);
+            
+            context.RegisterCompilationStartAction(compilationContext =>
+            {
+                // Dictionary to track reported I/O operations per orchestrator method to prevent duplicates
+                var reportedIoOperations = new ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool>();
+                
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeMemberAccess(ctx, reportedIoOperations), SyntaxKind.SimpleMemberAccessExpression);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeInvocationExpression(ctx, reportedIoOperations), SyntaxKind.InvocationExpression);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeObjectCreationExpression(ctx, reportedIoOperations), SyntaxKind.ObjectCreationExpression);
+            });
         }
 
-        private void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
@@ -52,34 +61,58 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for File I/O operations
             if (IsFileIoOperation(containingType, memberSymbol.Name))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.IoRule,
-                    memberAccess.GetLocation(),
-                    $"File I/O operation '{memberAccess}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, memberSymbol);
+                    if (reportedIoOperations.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.IoRule,
+                            memberAccess.GetLocation(),
+                            $"File I/O operation '{memberAccess}' detected"));
+                    }
+                }
                 return;
             }
 
             // Check for HTTP client operations
             if (IsHttpClientOperation(containingType, memberSymbol.Name))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.IoRule,
-                    memberAccess.GetLocation(),
-                    $"HTTP operation '{memberAccess}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, memberSymbol);
+                    if (reportedIoOperations.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.IoRule,
+                            memberAccess.GetLocation(),
+                            $"HTTP operation '{memberAccess}' detected"));
+                    }
+                }
                 return;
             }
 
             // Check for Directory operations
             if (IsDirectoryOperation(containingType, memberSymbol.Name))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.IoRule,
-                    memberAccess.GetLocation(),
-                    $"Directory operation '{memberAccess}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, memberSymbol);
+                    if (reportedIoOperations.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.IoRule,
+                            memberAccess.GetLocation(),
+                            $"Directory operation '{memberAccess}' detected"));
+                    }
+                }
             }
         }
 
-        private void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
             var invocation = (InvocationExpressionSyntax)context.Node;
 
@@ -108,14 +141,22 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 IsNetworkOperation(containingType, methodSymbol.Name) ||
                 IsConsoleOperation(containingType, methodSymbol.Name))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.IoRule,
-                    invocation.GetLocation(),
-                    $"I/O operation '{GetInvocationDisplayName(invocation)}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(invocation);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, (ISymbol)methodSymbol);
+                    if (reportedIoOperations.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.IoRule,
+                            invocation.GetLocation(),
+                            $"I/O operation '{GetInvocationDisplayName(invocation)}' detected"));
+                    }
+                }
             }
         }
 
-        private void AnalyzeObjectCreationExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeObjectCreationExpression(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
             var objectCreation = (ObjectCreationExpressionSyntax)context.Node;
 
@@ -137,10 +178,18 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for I/O related object creations
             if (containingNamespace != null && IsIoRelatedType(typeName, containingNamespace))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.IoRule,
-                    objectCreation.GetLocation(),
-                    $"I/O object creation '{typeName}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(objectCreation);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, (ISymbol)typeInfo.Type);
+                    if (reportedIoOperations.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.IoRule,
+                            objectCreation.GetLocation(),
+                            $"I/O object creation '{typeName}' detected"));
+                    }
+                }
             }
         }
 
@@ -240,6 +289,65 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 IdentifierNameSyntax identifier => identifier.ToString(),
                 _ => invocation.ToString()
             };
+        }
+
+        /// <summary>
+        /// Gets the containing orchestrator method for a given node, even if the node is in a helper method.
+        /// This ensures we deduplicate diagnostics per orchestrator method, not per helper method.
+        /// </summary>
+        private static MethodDeclarationSyntax? GetContainingOrchestratorMethod(SyntaxNode node)
+        {
+            // First find any containing method
+            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            if (containingMethod == null)
+            {
+                return null;
+            }
+
+            // Check if this method has the [OrchestrationTrigger] attribute
+            if (HasOrchestrationTriggerAttribute(containingMethod))
+            {
+                return containingMethod;
+            }
+
+            // If not, look for other methods in the same class that have the [OrchestrationTrigger] attribute
+            // This handles cases where I/O operations are in helper methods within the orchestrator class
+            var containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            if (containingClass != null)
+            {
+                foreach (var method in containingClass.Members.OfType<MethodDeclarationSyntax>())
+                {
+                    if (HasOrchestrationTriggerAttribute(method))
+                    {
+                        return method;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if a method has the [OrchestrationTrigger] attribute
+        /// </summary>
+        private static bool HasOrchestrationTriggerAttribute(MethodDeclarationSyntax method)
+        {
+            foreach (var parameterList in method.ParameterList.Parameters)
+            {
+                foreach (var attributeList in parameterList.AttributeLists)
+                {
+                    foreach (var attribute in attributeList.Attributes)
+                    {
+                        var attributeName = attribute.Name.ToString();
+                        if (attributeName.Contains("OrchestrationTrigger"))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

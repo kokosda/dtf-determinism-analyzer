@@ -75,26 +75,25 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
-            // Check for problematic DateTime members
-            if (IsDateTimeMember(memberSymbol))
+            // Check for problematic DateTime or DateTimeOffset members
+            if (IsDateTimeMember(memberSymbol) || IsDateTimeOffsetMember(memberSymbol))
             {
                 string memberName = memberSymbol.Name;
                 if (ProblematicDateTimeMembers.Contains(memberName))
                 {
+                    string typeName = memberSymbol.ContainingType?.Name ?? "DateTime";
                     var diagnostic = Diagnostic.Create(
                         DiagnosticDescriptors.TimeApiRule,
                         memberAccess.GetLocation(),
-                        memberName);
+                        $"{typeName}.{memberName}");
 
                     context.ReportDiagnostic(diagnostic);
                 }
             }
 
-            // Check for problematic Stopwatch members (property access like ElapsedMilliseconds)
-            if (IsStopwatchMember(memberSymbol))
+            // Check for Stopwatch properties like ElapsedMilliseconds (not method calls)
+            if (IsStopwatchMember(memberSymbol) && memberSymbol is IPropertySymbol)
             {
-                // For Stopwatch properties like ElapsedMilliseconds, ElapsedTicks, etc.
-                // These are non-deterministic because they depend on when the Stopwatch was started
                 string memberName = memberSymbol.Name;
                 if (IsStopwatchTimingProperty(memberName))
                 {
@@ -122,29 +121,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
-            // Check for Stopwatch static method calls like Stopwatch.StartNew()
+            // Check for Stopwatch method calls (both static and instance)
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
-                if (memberSymbol != null && IsStopwatchMember(memberSymbol))
-                {
-                    string memberName = memberSymbol.Name;
-                    if (ProblematicStopwatchMembers.Contains(memberName))
-                    {
-                        var diagnostic = Diagnostic.Create(
-                            DiagnosticDescriptors.TimeApiRule,
-                            invocation.GetLocation(),
-                            $"Stopwatch.{memberName}");
-
-                        context.ReportDiagnostic(diagnostic);
-                    }
-                }
-            }
-
-            // Check for Stopwatch instance method calls like stopwatch.Start()
-            if (invocation.Expression is MemberAccessExpressionSyntax instanceMemberAccess)
-            {
-                SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(instanceMemberAccess);
+                SymbolInfo symbolInfo = context.SemanticModel.GetSymbolInfo(memberAccess);
                 if (symbolInfo.Symbol is IMethodSymbol methodSymbol &&
                     methodSymbol.ContainingType?.Name == "Stopwatch" &&
                     methodSymbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System.Diagnostics")
@@ -171,6 +151,17 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static bool IsDateTimeMember(ISymbol symbol)
         {
             return symbol.ContainingType?.Name == "DateTime" &&
+                   symbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System";
+        }
+
+        /// <summary>
+        /// Determines if a symbol represents a DateTimeOffset member.
+        /// </summary>
+        /// <param name="symbol">The symbol to check.</param>
+        /// <returns>True if the symbol is a DateTimeOffset member.</returns>
+        private static bool IsDateTimeOffsetMember(ISymbol symbol)
+        {
+            return symbol.ContainingType?.Name == "DateTimeOffset" &&
                    symbol.ContainingType.ContainingNamespace?.ToDisplayString() == "System";
         }
 

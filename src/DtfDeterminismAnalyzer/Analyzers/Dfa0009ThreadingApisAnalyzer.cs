@@ -70,18 +70,49 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
+            ISymbol? targetSymbol = null;
+
+            // Handle different types of invocation expressions
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
-                ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
-                if (memberSymbol != null && IsThreadingApiCall(memberSymbol))
-                {
-                    var diagnostic = Diagnostic.Create(
-                        DiagnosticDescriptors.ThreadingApisRule,
-                        invocation.GetLocation(),
-                        "Threading API usage detected.");
+                // Regular member access: obj.Method() or field.Method()
+                targetSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
 
-                    context.ReportDiagnostic(diagnostic);
+                // If the direct symbol resolution didn't work, try getting the method symbol from the invocation
+                if (targetSymbol == null)
+                {
+                    targetSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
                 }
+
+                // Special handling for field access patterns like _field.Method()
+                if (targetSymbol == null && memberAccess.Expression != null)
+                {
+                    // Get the type of the expression being accessed (e.g., the type of _field)
+                    var expressionTypeInfo = context.SemanticModel.GetTypeInfo(memberAccess.Expression);
+                    if (expressionTypeInfo.Type != null)
+                    {
+                        // Look for the method in the type's members
+                        var methodName = memberAccess.Name.Identifier.ValueText;
+                        var potentialMethods = expressionTypeInfo.Type.GetMembers(methodName).OfType<IMethodSymbol>();
+                        targetSymbol = potentialMethods.FirstOrDefault();
+                    }
+                }
+            }
+            else
+            {
+                // Direct invocation or other patterns (including conditional access)
+                targetSymbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
+            }
+
+            // Check if the resolved symbol is a threading API
+            if (targetSymbol != null && IsThreadingApiCall(targetSymbol))
+            {
+                var diagnostic = Diagnostic.Create(
+                    DiagnosticDescriptors.ThreadingApisRule,
+                    invocation.GetLocation(),
+                    "Threading API usage detected.");
+
+                context.ReportDiagnostic(diagnostic);
             }
         }
 
@@ -128,8 +159,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
-            // Check if this is a threading-related type
-            if (IsThreadingType(typeSymbol))
+            // Only report object creation for specific high-risk threading types
+            // Most threading violations will be caught via method invocations instead
+            if (IsHighRiskThreadingObjectCreation(typeSymbol))
             {
                 var diagnostic = Diagnostic.Create(
                     DiagnosticDescriptors.ThreadingApisRule,
@@ -141,22 +173,146 @@ namespace DtfDeterminismAnalyzer.Analyzers
         }
 
         /// <summary>
+        /// Determines if the object creation represents a high-risk threading pattern.
+        /// </summary>
+        /// <param name="typeSymbol">The type being created.</param>
+        /// <returns>True if this is a high-risk threading object creation.</returns>
+        private static bool IsHighRiskThreadingObjectCreation(ITypeSymbol typeSymbol)
+        {
+            string typeName = typeSymbol.Name;
+            string? namespaceName = typeSymbol.ContainingNamespace?.ToDisplayString();
+
+            // Only flag object creation for types that are inherently problematic just by existing
+            // Don't flag Thread creation since the problem is usually starting it, not creating it
+            if (namespaceName == "System.Threading")
+            {
+                // These are problematic just by being created in orchestrator context
+                return typeName == "Timer" || typeName == "CancellationTokenSource";
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Determines if a symbol represents a threading API call.
         /// </summary>
         /// <param name="symbol">The symbol to check.</param>
         /// <returns>True if the symbol represents a threading API call.</returns>
         private static bool IsThreadingApiCall(ISymbol symbol)
         {
-            INamedTypeSymbol containingType = symbol.ContainingType;
-            if (containingType == null)
+            // Only check method symbols, not properties or fields
+            if (symbol is not IMethodSymbol methodSymbol)
             {
                 return false;
             }
 
-            // Check if it's a method from a threading type
+            if (methodSymbol.ContainingType == null)
+            {
+                return false;
+            }
+
+            INamedTypeSymbol containingType = methodSymbol.ContainingType;
             string typeName = containingType.Name;
             string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
+            // Enhanced semantic analysis for specific threading types
+            return CheckSpecificThreadingApis(symbol, containingType, typeName, namespaceName);
+        }
+
+        /// <summary>
+        /// Enhanced semantic analysis for specific threading API patterns.
+        /// </summary>
+        private static bool CheckSpecificThreadingApis(ISymbol symbol, INamedTypeSymbol containingType, string typeName, string? namespaceName)
+        {
+            // System.Threading namespace types
+            if (namespaceName == "System.Threading")
+            {
+                // ThreadPool methods - only specific problematic methods
+                if (typeName == "ThreadPool" && symbol.Name == "QueueUserWorkItem")
+                {
+                    return true;
+                }
+
+                // Thread methods - only problematic instance methods, not Sleep which can be used safely
+                if (typeName == "Thread" && symbol.Name == "Start")
+                {
+                    return true;
+                }
+
+                // AutoResetEvent methods
+                if (typeName == "AutoResetEvent" && (symbol.Name == "WaitOne" || symbol.Name == "Set" || symbol.Name == "Reset"))
+                {
+                    return true;
+                }
+
+                // ManualResetEvent methods
+                if (typeName == "ManualResetEvent" && (symbol.Name == "WaitOne" || symbol.Name == "Set" || symbol.Name == "Reset"))
+                {
+                    return true;
+                }
+
+                // WaitHandle methods (base class for AutoResetEvent, ManualResetEvent, Mutex, etc.)
+                if (typeName == "WaitHandle" && (symbol.Name == "WaitOne" || symbol.Name == "WaitAll" || symbol.Name == "WaitAny"))
+                {
+                    return true;
+                }
+
+                // Monitor methods
+                if (typeName == "Monitor" && (symbol.Name == "Enter" || symbol.Name == "Exit" || symbol.Name == "Wait" || symbol.Name == "Pulse"))
+                {
+                    return true;
+                }
+
+                // Mutex methods
+                if (typeName == "Mutex" && (symbol.Name == "WaitOne" || symbol.Name == "ReleaseMutex"))
+                {
+                    return true;
+                }
+
+                // SynchronizationContext methods
+                if (typeName == "SynchronizationContext" && (symbol.Name == "Post" || symbol.Name == "Send"))
+                {
+                    return true;
+                }
+
+                // Interlocked methods
+                if (typeName == "Interlocked" && (symbol.Name == "Exchange" || symbol.Name == "CompareExchange" || 
+                    symbol.Name == "Increment" || symbol.Name == "Decrement" || symbol.Name == "Add"))
+                {
+                    return true;
+                }
+
+                // CancellationToken methods  
+                if (typeName == "CancellationToken" && symbol.Name == "Register")
+                {
+                    return true;
+                }
+
+                // ReaderWriterLock methods
+                if ((typeName == "ReaderWriterLock" || typeName == "ReaderWriterLockSlim") &&
+                    (symbol.Name.Contains("Reader") || symbol.Name.Contains("Writer") || symbol.Name.Contains("Lock")))
+                {
+                    return true;
+                }
+            }
+
+            // System.Threading.Tasks namespace types
+            if (namespaceName == "System.Threading.Tasks")
+            {
+                // Parallel methods
+                if (typeName == "Parallel" && (symbol.Name == "For" || symbol.Name == "ForEach" || symbol.Name == "Invoke"))
+                {
+                    return true;
+                }
+
+                // Task.Run and other problematic Task methods
+                if (typeName == "Task" && symbol.Name == "Run")
+                {
+                    return true;
+                }
+            }
+
+            // Fallback to original logic for any other cases
             if ((namespaceName == "System.Threading" || namespaceName == "System.Threading.Tasks") &&
                 ProblematicThreadingTypes.Contains(typeName) &&
                 ProblematicThreadingMethods.Contains(symbol.Name))
@@ -164,10 +320,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return true;
             }
 
-            // Special case for CancellationToken.Register (in System namespace)
-            return containingType.Name == "CancellationToken" &&
-                containingType.ContainingNamespace?.ToDisplayString() == "System.Threading" &&
-                symbol.Name == "Register";
+            return false;
         }
 
         /// <summary>

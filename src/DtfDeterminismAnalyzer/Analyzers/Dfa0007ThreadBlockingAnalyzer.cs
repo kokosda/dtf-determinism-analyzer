@@ -132,13 +132,22 @@ namespace DtfDeterminismAnalyzer.Analyzers
             string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
             // System.Threading.Tasks.Task blocking operations
-            if ((typeName is "Task" or "Task`1") && namespaceName == "System.Threading.Tasks")
+            if (typeName == "Task" && namespaceName == "System.Threading.Tasks")
             {
-                return methodName is "Wait" or "RunSynchronously";
+                // Instance methods on Task objects
+                if (!methodSymbol.IsStatic && methodName is "Wait" or "RunSynchronously")
+                {
+                    return true;
+                }
+                
+                // Static methods on Task class (WaitAll, WaitAny)
+                if (methodSymbol.IsStatic && methodName is "WaitAll" or "WaitAny")
+                {
+                    return true;
+                }
             }
 
-            // Task.WaitAll and Task.WaitAny
-            return typeName == "Task" && namespaceName == "System.Threading.Tasks" ? methodName is "WaitAll" or "WaitAny" : false;
+            return false;
         }
 
         private static bool IsBlockingPropertyAccess(INamedTypeSymbol containingType, string propertyName, ISymbol symbol)
@@ -146,10 +155,16 @@ namespace DtfDeterminismAnalyzer.Analyzers
             string typeName = containingType.Name;
             string? namespaceName = containingType.ContainingNamespace?.ToDisplayString();
 
-            // Task.Result property access (blocking)
-            return (typeName is "Task`1") && namespaceName == "System.Threading.Tasks" && symbol is IPropertySymbol
-                ? propertyName is "Result"
-                : false;
+            // Task.Result property access (blocking) - works for both Task<T> and Task
+            if (symbol is IPropertySymbol && namespaceName == "System.Threading.Tasks")
+            {
+                if (propertyName == "Result" && (typeName == "Task" || typeName.StartsWith("Task`", StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsBlockingSyncOperation(INamedTypeSymbol containingType, string methodName)

@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using DtfDeterminismAnalyzer.Utils;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -21,12 +23,18 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterSyntaxNodeAction(AnalyzeMemberAccess, SyntaxKind.SimpleMemberAccessExpression);
-            context.RegisterSyntaxNodeAction(AnalyzeIdentifierName, SyntaxKind.IdentifierName);
-            context.RegisterSyntaxNodeAction(AnalyzeAssignmentExpression, SyntaxKind.SimpleAssignmentExpression);
+            // Use CompilationStartAction to maintain state across the compilation
+            context.RegisterCompilationStartAction(compilationContext =>
+            {
+                var reportedStaticFields = new ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol StaticField), bool>();
+                
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeMemberAccess(ctx, reportedStaticFields), SyntaxKind.SimpleMemberAccessExpression);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeIdentifierName(ctx, reportedStaticFields), SyntaxKind.IdentifierName);
+                compilationContext.RegisterSyntaxNodeAction(ctx => AnalyzeAssignmentExpression(ctx, reportedStaticFields), SyntaxKind.SimpleAssignmentExpression);
+            });
         }
 
-        private void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol StaticField), bool> reportedStaticFields)
         {
             var memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
@@ -36,23 +44,45 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
+            // Check the member being accessed (right side of the dot)
             ISymbol? memberSymbol = context.SemanticModel.GetSymbolInfo(memberAccess).Symbol;
-            if (memberSymbol == null)
+            if (memberSymbol != null && IsStaticMutableAccess(memberSymbol))
             {
-                return;
+                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, memberSymbol);
+                    if (reportedStaticFields.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.StaticStateRule,
+                            memberAccess.GetLocation()));
+                    }
+                }
             }
 
-            // Check if this is static field or property access
-            if (IsStaticMutableAccess(memberSymbol))
+            // Also check the expression being accessed (left side of the dot) - this handles cases like _staticField.SomeProperty
+            if (memberAccess.Expression is IdentifierNameSyntax identifier)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.StaticStateRule,
-                    memberAccess.GetLocation(),
-                    $"Static state access '{memberAccess}' detected"));
+                ISymbol? expressionSymbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
+                if (expressionSymbol != null && IsStaticMutableAccess(expressionSymbol))
+                {
+                    var orchestratorMethod = GetContainingOrchestratorMethod(identifier);
+                    if (orchestratorMethod != null)
+                    {
+                        var key = (orchestratorMethod, expressionSymbol);
+                        if (reportedStaticFields.TryAdd(key, true))
+                        {
+                            context.ReportDiagnostic(Diagnostic.Create(
+                                DiagnosticDescriptors.StaticStateRule,
+                                identifier.GetLocation()));
+                        }
+                    }
+                }
             }
         }
 
-        private void AnalyzeIdentifierName(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeIdentifierName(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol StaticField), bool> reportedStaticFields)
         {
             var identifier = (IdentifierNameSyntax)context.Node;
 
@@ -62,8 +92,18 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return;
             }
 
-            // Skip if this identifier is part of a member access (handled separately)
-            if (identifier.Parent is MemberAccessExpressionSyntax)
+            // Skip if this identifier is part of a member access (handled by AnalyzeMemberAccess)
+            if (identifier.Parent is MemberAccessExpressionSyntax memberAccess)
+            {
+                // Only skip if this identifier is the Expression part (left side), not the Name part (right side)
+                if (memberAccess.Expression == identifier)
+                {
+                    return;
+                }
+            }
+
+            // Skip if this identifier is part of an assignment's left side (handled by AnalyzeAssignmentExpression)
+            if (identifier.Parent is AssignmentExpressionSyntax assignment && assignment.Left == identifier)
             {
                 return;
             }
@@ -77,14 +117,21 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check if this is direct static field or property access
             if (IsStaticMutableAccess(symbolInfo.Symbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.StaticStateRule,
-                    identifier.GetLocation(),
-                    $"Static state access '{identifier}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(identifier);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, symbolInfo.Symbol);
+                    if (reportedStaticFields.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.StaticStateRule,
+                            identifier.GetLocation()));
+                    }
+                }
             }
         }
 
-        private void AnalyzeAssignmentExpression(SyntaxNodeAnalysisContext context)
+        private static void AnalyzeAssignmentExpression(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol StaticField), bool> reportedStaticFields)
         {
             var assignment = (AssignmentExpressionSyntax)context.Node;
 
@@ -103,10 +150,17 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check if assigning to static mutable state
             if (IsStaticMutableAccess(leftSymbol))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    DiagnosticDescriptors.StaticStateRule,
-                    assignment.Left.GetLocation(),
-                    $"Static state modification '{assignment.Left}' detected"));
+                var orchestratorMethod = GetContainingOrchestratorMethod(assignment);
+                if (orchestratorMethod != null)
+                {
+                    var key = (orchestratorMethod, leftSymbol);
+                    if (reportedStaticFields.TryAdd(key, true))
+                    {
+                        context.ReportDiagnostic(Diagnostic.Create(
+                            DiagnosticDescriptors.StaticStateRule,
+                            assignment.Left.GetLocation()));
+                    }
+                }
             }
         }
 
@@ -196,6 +250,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
                 "Version" when namespaceName == "System" => true,
 
+                // Readonly collection interfaces are considered immutable
+                "IReadOnlyList" or "IReadOnlyCollection" or "IReadOnlyDictionary" or
+                "IReadOnlySet" when namespaceName == "System.Collections.Generic" => true,
+
+                "IEnumerable" when namespaceName == "System.Collections" => true,
+                "IEnumerable" when namespaceName == "System.Collections.Generic" => true,
+
                 _ => false
             };
         }
@@ -260,6 +321,65 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Add more known safe static properties as needed
+            return false;
+        }
+
+        /// <summary>
+        /// Finds the orchestrator method that contains the given syntax node.
+        /// An orchestrator method is one that has the [OrchestrationTrigger] attribute.
+        /// </summary>
+        private static MethodDeclarationSyntax? GetContainingOrchestratorMethod(SyntaxNode node)
+        {
+            // First find any containing method
+            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            if (containingMethod == null)
+            {
+                return null;
+            }
+
+            // Check if this method has the [OrchestrationTrigger] attribute
+            if (HasOrchestrationTriggerAttribute(containingMethod))
+            {
+                return containingMethod;
+            }
+
+            // If not, look for other methods in the same class that have the [OrchestrationTrigger] attribute
+            // This handles cases where static field access is in helper methods within the orchestrator class
+            var containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            if (containingClass != null)
+            {
+                foreach (var method in containingClass.Members.OfType<MethodDeclarationSyntax>())
+                {
+                    if (HasOrchestrationTriggerAttribute(method))
+                    {
+                        return method;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if a method has the [OrchestrationTrigger] attribute
+        /// </summary>
+        private static bool HasOrchestrationTriggerAttribute(MethodDeclarationSyntax method)
+        {
+            foreach (var parameterList in method.ParameterList.Parameters)
+            {
+                foreach (var attributeList in parameterList.AttributeLists)
+                {
+                    foreach (var attribute in attributeList.Attributes)
+                    {
+                        var attributeName = attribute.Name.ToString();
+                        if (attributeName.Contains("OrchestrationTrigger"))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
             return false;
         }
     }

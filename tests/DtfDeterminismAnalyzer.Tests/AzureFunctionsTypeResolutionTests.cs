@@ -212,19 +212,86 @@ public class LoggingTypesTest
             // Integration contract: Complex type inheritance scenarios must be supported
             string testCode = @"
 using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask.ContextImplementations;
+using Microsoft.Azure.WebJobs;
+using System.Net.Http;
 
 public interface ICustomOrchestrationContext : IDurableOrchestrationContext
 {
     Task<string> CustomMethod(string input);
 }
 
-public class CustomOrchestrationContext : DurableOrchestrationContextBase, ICustomOrchestrationContext
+public class CustomOrchestrationContext : IDurableOrchestrationContext, ICustomOrchestrationContext
 {
+    // Implement basic interface members with minimal viable implementations
+    public string Name => ""CustomOrchestrator"";
+    public string InstanceId => ""test-instance"";
+    public string ParentInstanceId => null;
+    public DateTime CurrentUtcDateTime => DateTime.UtcNow;
+    public bool IsReplaying => false;
+
     public async Task<string> CustomMethod(string input)
     {
         return await CallActivityAsync<string>(""ProcessCustom"", input);
     }
+
+    // Implement required interface members with stub implementations
+    public T GetInput<T>() => default(T);
+    public void SetOutput(object output) { }
+    public void ContinueAsNew(object input, bool preserveUnprocessedEvents = true) { }
+    public void SetCustomStatus(object customStatusObject) { }
+    
+    public Task<T> CallActivityAsync<T>(string name, object input = null) => Task.FromResult(default(T));
+    public Task CallActivityAsync(string name, object input = null) => Task.CompletedTask;
+    
+    public Task<T> CallActivityWithRetryAsync<T>(string name, RetryOptions retryOptions, object input = null) => Task.FromResult(default(T));
+    public Task CallActivityWithRetryAsync(string name, RetryOptions retryOptions, object input = null) => Task.CompletedTask;
+    
+    public Task<T> CallSubOrchestratorAsync<T>(string functionName, object input = null) => Task.FromResult(default(T));
+    public Task<T> CallSubOrchestratorAsync<T>(string functionName, string instanceId, object input = null) => Task.FromResult(default(T));
+    public Task CallSubOrchestratorAsync(string functionName, object input = null) => Task.CompletedTask;
+    public Task CallSubOrchestratorAsync(string functionName, string instanceId, object input = null) => Task.CompletedTask;
+    
+    public Task<T> CallSubOrchestratorWithRetryAsync<T>(string functionName, RetryOptions retryOptions, object input = null) => Task.FromResult(default(T));
+    public Task<T> CallSubOrchestratorWithRetryAsync<T>(string functionName, RetryOptions retryOptions, string instanceId, object input = null) => Task.FromResult(default(T));
+    public Task CallSubOrchestratorWithRetryAsync(string functionName, RetryOptions retryOptions, object input = null) => Task.CompletedTask;
+    public Task CallSubOrchestratorWithRetryAsync(string functionName, RetryOptions retryOptions, string instanceId, object input = null) => Task.CompletedTask;
+    
+    public Task<T> CreateTimer<T>(DateTime fireAt, T state, CancellationToken cancellationToken = default) => Task.FromResult(state);
+    public Task CreateTimer(DateTime fireAt, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    
+    public Task<T> WaitForExternalEvent<T>(string name) => Task.FromResult(default(T));
+    public Task WaitForExternalEvent(string name) => Task.CompletedTask;
+    public Task WaitForExternalEvent(string name, TimeSpan timeout, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<T> WaitForExternalEvent<T>(string name, TimeSpan timeout, CancellationToken cancellationToken = default) => Task.FromResult(default(T));
+    public Task<T> WaitForExternalEvent<T>(string name, TimeSpan timeout, T defaultValue, CancellationToken cancellationToken = default) => Task.FromResult(defaultValue);
+    
+    public Task<T> CallEntityAsync<T>(EntityId entityId, string operationName) => Task.FromResult(default(T));
+    public Task CallEntityAsync(EntityId entityId, string operationName) => Task.CompletedTask;
+    public Task<T> CallEntityAsync<T>(EntityId entityId, string operationName, object operationInput) => Task.FromResult(default(T));
+    public Task CallEntityAsync(EntityId entityId, string operationName, object operationInput) => Task.CompletedTask;
+    
+    public Task<DurableHttpResponse> CallHttpAsync(HttpMethod method, Uri uri, string content = null, HttpRetryOptions retryOptions = null) => Task.FromResult(new DurableHttpResponse(System.Net.HttpStatusCode.OK));
+    public Task<DurableHttpResponse> CallHttpAsync(DurableHttpRequest request) => Task.FromResult(new DurableHttpResponse(System.Net.HttpStatusCode.OK));
+    
+    public void SignalEntity(EntityId entity, string operationName, object operationInput) { }
+    public void SignalEntity(EntityId entity, DateTime scheduledTimeUtc, string operationName, object operationInput) { }
+    
+    public string StartNewOrchestration(string functionName, object input = null, string instanceId = null) => ""new-instance-id"";
+    
+    // Use explicit interface implementation for generic methods with constraints
+    TEntityInterface IDurableOrchestrationContext.CreateEntityProxy<TEntityInterface>(string entityKey) => default(TEntityInterface);
+    TEntityInterface IDurableOrchestrationContext.CreateEntityProxy<TEntityInterface>(EntityId entityId) => default(TEntityInterface);
+    
+    public Task<EntityStateResponse<T>> LockAsync<T>(params EntityId[] entities) => Task.FromResult(new EntityStateResponse<T>());
+    public Task<IDisposable> LockAsync(params EntityId[] entities) => Task.FromResult<IDisposable>(null);
+    public bool IsLocked(out IReadOnlyList<EntityId> ownedLocks) { ownedLocks = new List<EntityId>(); return false; }
+    
+    public Guid NewGuid() => Guid.NewGuid();
 }";
 
             var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();

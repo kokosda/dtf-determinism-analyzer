@@ -188,7 +188,7 @@ public class TestOrchestrator
     public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
     {
         var stopwatch = Stopwatch.StartNew();
-        await context.CallActivityAsync(""SomeActivity"", stopwatch.ElapsedMilliseconds);
+        await context.CallActivityAsync(""SomeActivity"", ""test"");
     }
 }";
 
@@ -208,7 +208,28 @@ public class TestOrchestrator
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        await context.CallActivityAsync(""SomeActivity"", stopwatch.ElapsedMilliseconds);
+        await context.CallActivityAsync(""SomeActivity"", ""test"");
+    }
+}";
+
+            await VerifyDFA0001Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task StopwatchElapsedMillisecondsInOrchestratorShouldReportDFA0001()
+        {
+            string testCode = OrchestrationTriggerUsing + @"
+using System.Diagnostics;
+
+public class TestOrchestrator
+{
+    private static readonly Stopwatch _stopwatch = new Stopwatch();
+    
+    [FunctionName(""TestOrchestrator"")]
+    public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+    {
+        var elapsed = _stopwatch.ElapsedMilliseconds;
+        await context.CallActivityAsync(""SomeActivity"", elapsed);
     }
 }";
 
