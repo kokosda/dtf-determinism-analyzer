@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using DtfDeterminismAnalyzer.Utils;
@@ -88,12 +89,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 if (targetSymbol == null && memberAccess.Expression != null)
                 {
                     // Get the type of the expression being accessed (e.g., the type of _field)
-                    var expressionTypeInfo = context.SemanticModel.GetTypeInfo(memberAccess.Expression);
+                    TypeInfo expressionTypeInfo = context.SemanticModel.GetTypeInfo(memberAccess.Expression);
                     if (expressionTypeInfo.Type != null)
                     {
                         // Look for the method in the type's members
-                        var methodName = memberAccess.Name.Identifier.ValueText;
-                        var potentialMethods = expressionTypeInfo.Type.GetMembers(methodName).OfType<IMethodSymbol>();
+                        string methodName = memberAccess.Name.Identifier.ValueText;
+                        IEnumerable<IMethodSymbol> potentialMethods = expressionTypeInfo.Type.GetMembers(methodName).OfType<IMethodSymbol>();
                         targetSymbol = potentialMethods.FirstOrDefault();
                     }
                 }

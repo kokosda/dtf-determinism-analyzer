@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace DtfDeterminismAnalyzer.Analyzers
 {
@@ -44,7 +45,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Get the containing orchestrator method for deduplication
-            var orchestratorMethod = GetContainingOrchestratorMethod(awaitExpression);
+            MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(awaitExpression);
             if (orchestratorMethod == null)
             {
                 return;
@@ -82,7 +83,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Get the containing orchestrator method for deduplication
-            var orchestratorMethod = GetContainingOrchestratorMethod(invocation);
+            MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(invocation);
             if (orchestratorMethod == null)
             {
                 return;
@@ -164,7 +165,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static bool AreAllTasksInCompositionDurable(InvocationExpressionSyntax whenAllInvocation, SemanticModel semanticModel)
         {
             // Get the containing method to analyze the full context
-            var method = whenAllInvocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = whenAllInvocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method == null) return false;
 
             string methodText = method.ToString();
@@ -373,7 +374,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             if (expression is InvocationExpressionSyntax invocation)
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(invocation);
+                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(invocation);
                 if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
                 {
                     return $"Non-durable async method '{GetMethodDisplayName(methodSymbol)}' detected";
@@ -397,11 +398,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Look for Task.WhenAll or Task.WhenAny usage in the same method
-            var method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (method == null) return false;
 
             // Simple heuristic: if the method contains Task.WhenAll or Task.WhenAny, assume this might be related
-            var methodText = method.ToString();
+            string methodText = method.ToString();
             return methodText.Contains("Task.WhenAll") || methodText.Contains("Task.WhenAny");
         }
 
@@ -411,7 +412,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// </summary>
         private static MethodDeclarationSyntax? GetContainingOrchestratorMethod(SyntaxNode node)
         {
-            var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             
             // Check if this method or any ancestor method has an OrchestrationTrigger parameter
             while (method != null)
@@ -440,7 +441,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             
             if (node is InvocationExpressionSyntax invocation)
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(invocation);
+                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(invocation);
                 if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
                 {
                     baseKey = $"{methodSymbol.ContainingType?.Name}.{methodSymbol.Name}";
@@ -452,7 +453,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
             else if (node is MemberAccessExpressionSyntax memberAccess)
             {
-                var symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
+                SymbolInfo symbolInfo = semanticModel.GetSymbolInfo(memberAccess);
                 if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
                 {
                     baseKey = $"{methodSymbol.ContainingType?.Name}.{methodSymbol.Name}";
@@ -468,7 +469,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             }
 
             // Include location to distinguish multiple calls to the same method
-            var linePosition = location.GetLineSpan().StartLinePosition;
+            LinePosition linePosition = location.GetLineSpan().StartLinePosition;
             return $"{baseKey}@{linePosition.Line}:{linePosition.Character}";
         }
     }

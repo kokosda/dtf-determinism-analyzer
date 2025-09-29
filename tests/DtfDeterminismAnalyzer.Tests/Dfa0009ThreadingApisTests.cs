@@ -1,8 +1,6 @@
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0009ThreadingApisAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -24,7 +22,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         // Helper methods for test verification
         private async Task VerifyDFA0009Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0009"), "Expected DFA0009 diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected"), "Expected correct diagnostic message");
@@ -32,15 +30,15 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(0), "Expected no diagnostics");
         }
 
         private async Task VerifyMultipleDFA0009Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(expectedCount), $"Expected exactly {expectedCount} diagnostics");
-            foreach (var diagnostic in result.AnalyzerDiagnostics)
+            foreach (Diagnostic diagnostic in result.AnalyzerDiagnostics)
             {
                 Assert.That(diagnostic.Id, Is.EqualTo("DFA0009"), "Expected DFA0009 diagnostic");
                 Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected"), "Expected correct diagnostic message");

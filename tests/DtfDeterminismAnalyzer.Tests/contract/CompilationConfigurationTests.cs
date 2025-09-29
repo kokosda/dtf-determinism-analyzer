@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 namespace DtfDeterminismAnalyzer.Tests
@@ -12,13 +15,13 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the AnalyzerTestBase provides proper configuration methods for analyzer testing.
     /// </summary>
     [TestFixture]
-    public class CompilationConfigurationTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
+    public class CompilationConfigurationTests : AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>
     {
         [Test]
         public void GetParseOptions_WithDefaultSettings_ConfiguresCSharp12WithProperSettings()
         {
             // Act
-            var parseOptions = GetParseOptions();
+            CSharpParseOptions parseOptions = GetParseOptions();
 
             // Assert
             Assert.That(parseOptions, Is.Not.Null);
@@ -34,7 +37,7 @@ namespace DtfDeterminismAnalyzer.Tests
         public void GetCompilationOptions_WithDefaultSettings_ConfiguresProperSettings()
         {
             // Act
-            var compilationOptions = GetCompilationOptions();
+            CSharpCompilationOptions compilationOptions = GetCompilationOptions();
 
             // Assert
             Assert.That(compilationOptions, Is.Not.Null);
@@ -60,8 +63,8 @@ namespace DtfDeterminismAnalyzer.Tests
         public void GetCompilationOptions_WithDiagnosticSettings_ConfiguresCriticalDiagnosticSettings()
         {
             // Act
-            var compilationOptions = GetCompilationOptions();
-            var diagnosticOptions = compilationOptions.SpecificDiagnosticOptions;
+            CSharpCompilationOptions compilationOptions = GetCompilationOptions();
+            ImmutableDictionary<string, ReportDiagnostic> diagnosticOptions = compilationOptions.SpecificDiagnosticOptions;
 
             // Assert - Critical compilation errors should be reported as errors
             Assert.That(diagnosticOptions.ContainsKey("CS0234"), Is.True, 
@@ -90,7 +93,7 @@ namespace DtfDeterminismAnalyzer.Tests
         public void GetAnalyzerOptions_WithDefaults_ProvidesValidConfiguration()
         {
             // Act
-            var analyzerOptions = GetAnalyzerOptions();
+            AnalyzerOptions analyzerOptions = GetAnalyzerOptions();
 
             // Assert
             Assert.That(analyzerOptions, Is.Not.Null);
@@ -104,7 +107,7 @@ namespace DtfDeterminismAnalyzer.Tests
         public void CreateSolutionTransform_WithConfiguration_ProvidesValidTransformFunction()
         {
             // Act
-            var transform = CreateSolutionTransform();
+            Func<Solution, ProjectId, Solution> transform = CreateSolutionTransform();
 
             // Assert
             Assert.That(transform, Is.Not.Null, 
@@ -114,8 +117,8 @@ namespace DtfDeterminismAnalyzer.Tests
             Assert.DoesNotThrow(() =>
             {
                 // Create a minimal solution/project to test transformation
-                using var workspace = new Microsoft.CodeAnalysis.AdhocWorkspace();
-                var solution = workspace.CurrentSolution;
+                using var workspace = new AdhocWorkspace();
+                Solution solution = workspace.CurrentSolution;
                 var projectInfo = Microsoft.CodeAnalysis.ProjectInfo.Create(
                     Microsoft.CodeAnalysis.ProjectId.CreateNewId(),
                     Microsoft.CodeAnalysis.VersionStamp.Create(),
@@ -124,10 +127,10 @@ namespace DtfDeterminismAnalyzer.Tests
                     LanguageNames.CSharp);
                 
                 solution = solution.AddProject(projectInfo);
-                var projectId = solution.ProjectIds[0];
-                
+                ProjectId projectId = solution.ProjectIds[0];
+
                 // Apply the transformation
-                var transformedSolution = transform(solution, projectId);
+                Solution transformedSolution = transform(solution, projectId);
                 
                 Assert.That(transformedSolution, Is.Not.Null, 
                     "Transform should return a valid solution");
@@ -138,7 +141,7 @@ namespace DtfDeterminismAnalyzer.Tests
         public void GetStandardReferenceAssemblies_WithDefaults_ReturnsConfiguredReferences()
         {
             // Act
-            var referenceAssemblies = GetStandardReferenceAssemblies();
+            ReferenceAssemblies referenceAssemblies = GetStandardReferenceAssemblies();
 
             // Assert
             Assert.That(referenceAssemblies, Is.Not.Null, 
@@ -166,7 +169,7 @@ public class TestFunction
 }";
 
             // Act
-            var compilation = await CreateTestCompilation(testCode);
+            Compilation compilation = await CreateTestCompilation(testCode);
             var diagnostics = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
                 .ToList();

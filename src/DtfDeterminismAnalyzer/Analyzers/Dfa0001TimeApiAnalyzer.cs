@@ -60,7 +60,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <param name="context">The syntax node analysis context.</param>
         private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context)
         {
-            var memberAccess = (MemberAccessExpressionSyntax)context.Node;
+            MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
             // Check if this member access is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
@@ -82,7 +82,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 if (ProblematicDateTimeMembers.Contains(memberName))
                 {
                     string typeName = memberSymbol.ContainingType?.Name ?? "DateTime";
-                    var diagnostic = Diagnostic.Create(
+                    Diagnostic diagnostic = Diagnostic.Create(
                         DiagnosticDescriptors.TimeApiRule,
                         memberAccess.GetLocation(),
                         $"{typeName}.{memberName}");
@@ -97,7 +97,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 string memberName = memberSymbol.Name;
                 if (IsStopwatchTimingProperty(memberName))
                 {
-                    var diagnostic = Diagnostic.Create(
+                    Diagnostic diagnostic = Diagnostic.Create(
                         DiagnosticDescriptors.TimeApiRule,
                         memberAccess.GetLocation(),
                         $"Stopwatch.{memberName}");
@@ -113,7 +113,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// <param name="context">The syntax node analysis context.</param>
         private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context)
         {
-            var invocation = (InvocationExpressionSyntax)context.Node;
+            InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
             // Check if this invocation is within an orchestrator method
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
@@ -132,7 +132,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                     string methodName = methodSymbol.Name;
                     if (ProblematicStopwatchMembers.Contains(methodName))
                     {
-                        var diagnostic = Diagnostic.Create(
+                        Diagnostic diagnostic = Diagnostic.Create(
                             DiagnosticDescriptors.TimeApiRule,
                             invocation.GetLocation(),
                             $"Stopwatch.{methodName}");

@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 namespace DtfDeterminismAnalyzer.Tests
@@ -10,7 +9,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic Random usage and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0003RandomTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0003RandomAnalyzer>
+    public class Dfa0003RandomTests : AnalyzerTestBase<Analyzers.Dfa0003RandomAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -24,7 +23,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         /// </summary>
         private async Task VerifyDFA0003Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -33,8 +32,8 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
             // Verify analyzer diagnostics
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0003").ToList();
             Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0003 diagnostic");
-            
-            var diagnostic = analyzerDiagnostics[0];
+
+            Microsoft.CodeAnalysis.Diagnostic diagnostic = analyzerDiagnostics[0];
             Assert.AreEqual("Non-deterministic random used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                 "Diagnostic message should match expected message");
         }
@@ -44,7 +43,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         /// </summary>
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -60,7 +59,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
         /// </summary>
         private async Task VerifyMultipleDFA0003Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -70,7 +69,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0003").ToList();
             Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0003 diagnostics");
 
-            foreach (var diagnostic in analyzerDiagnostics)
+            foreach (Microsoft.CodeAnalysis.Diagnostic? diagnostic in analyzerDiagnostics)
             {
                 Assert.AreEqual("Non-deterministic random used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                     "Diagnostic message should match expected message");

@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 namespace DtfDeterminismAnalyzer.Tests
@@ -36,8 +35,8 @@ public class TestOrchestrator
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var result = await testBase.RunAnalyzerTest(testCode);
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            AnalyzerTestResult result = await testBase.RunAnalyzerTest(testCode);
             
             // Contract: No compilation errors should exist
             var compilationErrors = result.CompilationDiagnostics
@@ -75,16 +74,16 @@ public class TestOrchestrator
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var result = await testBase.RunAnalyzerTest(validTestCode);
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            AnalyzerTestResult result = await testBase.RunAnalyzerTest(validTestCode);
             
             // Contract: Compilation should succeed
             Assert.IsTrue(result.CompilationSucceeded, 
                 "Test compilation must succeed with proper assembly references");
-            
+
             // Contract: Diagnostics should be categorized correctly
-            var compilationDiagnostics = result.CompilationDiagnostics.Count;
-            var analyzerDiagnostics = result.AnalyzerDiagnostics.Count;
+            int compilationDiagnostics = result.CompilationDiagnostics.Count;
+            int analyzerDiagnostics = result.AnalyzerDiagnostics.Count;
             
             Assert.AreEqual(0, result.CompilationDiagnostics.Count(d => d.Severity == DiagnosticSeverity.Error),
                 "No compilation errors should exist with proper assembly references");
@@ -132,8 +131,8 @@ public class ComplexFunctionApp
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var errors = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
@@ -163,8 +162,8 @@ public class TestOrchestrator
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var result = await testBase.RunAnalyzerTest(testCode);
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            AnalyzerTestResult result = await testBase.RunAnalyzerTest(testCode);
             
             // Contract: Diagnostic locations should be accurate
             var timeApiDiagnostics = result.AnalyzerDiagnostics
@@ -173,7 +172,7 @@ public class TestOrchestrator
             
             if (timeApiDiagnostics.Count > 0)
             {
-                var diagnostic = timeApiDiagnostics.First();
+                Diagnostic diagnostic = timeApiDiagnostics.First();
                 Assert.IsTrue(diagnostic.Location.GetLineSpan().StartLinePosition.Line >= 0,
                     "Diagnostic location must be preserved and accurate");
             }

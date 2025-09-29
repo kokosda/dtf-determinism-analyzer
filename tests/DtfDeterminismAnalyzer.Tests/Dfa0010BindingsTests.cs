@@ -1,8 +1,6 @@
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
+using Microsoft.CodeAnalysis;
 using NUnit.Framework;
-using VerifyCS = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier<DtfDeterminismAnalyzer.Analyzers.Dfa0010BindingsAnalyzer>;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -25,7 +23,7 @@ using Microsoft.Extensions.Logging;
         // Helper methods for test verification
         private async Task VerifyDFA0010Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected in orchestrator"), "Expected correct diagnostic message");
@@ -33,15 +31,15 @@ using Microsoft.Extensions.Logging;
 
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(0), "Expected no diagnostics");
         }
 
         private async Task VerifyMultipleDFA0010Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(expectedCount), $"Expected exactly {expectedCount} diagnostics");
-            foreach (var diagnostic in result.AnalyzerDiagnostics)
+            foreach (Diagnostic diagnostic in result.AnalyzerDiagnostics)
             {
                 Assert.That(diagnostic.Id, Is.EqualTo("DFA0010"), "Expected DFA0010 diagnostic");
                 Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Direct binding usage detected in orchestrator"), "Expected correct diagnostic message");

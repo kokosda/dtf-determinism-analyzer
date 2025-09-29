@@ -7,8 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using VerifyAnalyzer = Microsoft.CodeAnalysis.CSharp.Testing.NUnit.AnalyzerVerifier;
+using System.Reflection;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -58,15 +57,15 @@ namespace DtfDeterminismAnalyzer.Tests
             try
             {
                 // Microsoft.Azure.WebJobs - Core WebJobs types
-                var webJobsAssembly = typeof(Microsoft.Azure.WebJobs.FunctionNameAttribute).Assembly;
+                Assembly webJobsAssembly = typeof(Microsoft.Azure.WebJobs.FunctionNameAttribute).Assembly;
                 references.Add(MetadataReference.CreateFromFile(webJobsAssembly.Location));
-                
+
                 // Microsoft.Azure.WebJobs.Extensions.DurableTask - DurableTask extensions
-                var durableTaskAssembly = typeof(Microsoft.Azure.WebJobs.Extensions.DurableTask.IDurableOrchestrationContext).Assembly;
+                Assembly durableTaskAssembly = typeof(Microsoft.Azure.WebJobs.Extensions.DurableTask.IDurableOrchestrationContext).Assembly;
                 references.Add(MetadataReference.CreateFromFile(durableTaskAssembly.Location));
-                
+
                 // Microsoft.Extensions.Logging.Abstractions - ILogger interface
-                var loggingAssembly = typeof(Microsoft.Extensions.Logging.ILogger).Assembly;
+                Assembly loggingAssembly = typeof(Microsoft.Extensions.Logging.ILogger).Assembly;
                 references.Add(MetadataReference.CreateFromFile(loggingAssembly.Location));
             }
             catch (System.IO.FileNotFoundException)
@@ -74,7 +73,7 @@ namespace DtfDeterminismAnalyzer.Tests
                 // If assembly files are not found, fall back to package-based references
                 // This can happen in some test environments or when assemblies are loaded differently
             }
-            catch (System.TypeLoadException)
+            catch (TypeLoadException)
             {
                 // If types are not available, fall back to package-based references
                 // This can happen when the referenced packages are not available at runtime
@@ -84,18 +83,18 @@ namespace DtfDeterminismAnalyzer.Tests
             try
             {
                 // Microsoft.AspNetCore.Mvc.Abstractions - IActionResult interface
-                var mvcAssembly = typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly;
+                Assembly mvcAssembly = typeof(Microsoft.AspNetCore.Mvc.IActionResult).Assembly;
                 references.Add(MetadataReference.CreateFromFile(mvcAssembly.Location));
-                
+
                 // Microsoft.AspNetCore.Http.Abstractions - HttpRequest interface
-                var httpAssembly = typeof(Microsoft.AspNetCore.Http.HttpRequest).Assembly;
+                Assembly httpAssembly = typeof(Microsoft.AspNetCore.Http.HttpRequest).Assembly;
                 references.Add(MetadataReference.CreateFromFile(httpAssembly.Location));
             }
             catch (System.IO.FileNotFoundException)
             {
                 // ASP.NET Core assemblies might not be available in all test scenarios
             }
-            catch (System.TypeLoadException)
+            catch (TypeLoadException)
             {
                 // ASP.NET Core types might not be available in all test scenarios
             }
@@ -112,16 +111,16 @@ namespace DtfDeterminismAnalyzer.Tests
         /// <returns>A compilation with comprehensive Azure Functions type support</returns>
         public async Task<Compilation> CreateTestCompilationWithAssemblyReferences(string source)
         {
-            var syntaxTree = CSharpSyntaxTree.ParseText(source, GetParseOptions());
-            
+            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, GetParseOptions());
+
             // Get package-based references
-            var packageReferences = await TestReferences.ResolveAsync(LanguageNames.CSharp, default);
-            
+            ImmutableArray<MetadataReference> packageReferences = await TestReferences.ResolveAsync(LanguageNames.CSharp, default);
+
             // Get assembly-based references
-            var assemblyReferences = CreateAzureFunctionsMetadataReferences();
-            
+            IEnumerable<MetadataReference> assemblyReferences = CreateAzureFunctionsMetadataReferences();
+
             // Combine both reference types for maximum compatibility
-            var allReferences = packageReferences.Concat(assemblyReferences).Distinct();
+            IEnumerable<MetadataReference> allReferences = packageReferences.Concat(assemblyReferences).Distinct();
             
             var compilation = CSharpCompilation.Create(
                 "TestCompilation",
@@ -175,7 +174,7 @@ namespace DtfDeterminismAnalyzer.Tests
         /// <returns>Dictionary of diagnostic ID to report action mappings</returns>
         private static ImmutableDictionary<string, ReportDiagnostic> GetSpecificDiagnosticOptions()
         {
-            var builder = ImmutableDictionary.CreateBuilder<string, ReportDiagnostic>();
+            ImmutableDictionary<string, ReportDiagnostic>.Builder builder = ImmutableDictionary.CreateBuilder<string, ReportDiagnostic>();
             
             // Suppress nullable warnings that are expected in test scenarios
             builder["CS8600"] = ReportDiagnostic.Suppress; // Converting null literal or possible null value
@@ -213,11 +212,11 @@ namespace DtfDeterminismAnalyzer.Tests
         {
             return (solution, projectId) =>
             {
-                var project = solution.GetProject(projectId);
+                Project? project = solution.GetProject(projectId);
                 if (project == null) return solution;
-                
-                var parseOptions = GetParseOptions();
-                var compilationOptions = GetCompilationOptions();
+
+                CSharpParseOptions parseOptions = GetParseOptions();
+                CSharpCompilationOptions compilationOptions = GetCompilationOptions();
                 
                 return solution
                     .WithProjectParseOptions(projectId, parseOptions)
@@ -243,8 +242,8 @@ namespace DtfDeterminismAnalyzer.Tests
         /// <returns>A compilation with Azure Functions types resolved</returns>
         public async Task<Compilation> CreateTestCompilation(string source)
         {
-            var syntaxTree = CSharpSyntaxTree.ParseText(source, GetParseOptions());
-            var references = await TestReferences.ResolveAsync(LanguageNames.CSharp, default);
+            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source, GetParseOptions());
+            ImmutableArray<MetadataReference> references = await TestReferences.ResolveAsync(LanguageNames.CSharp, default);
             
             var compilation = CSharpCompilation.Create(
                 "TestCompilation",
@@ -263,7 +262,7 @@ namespace DtfDeterminismAnalyzer.Tests
         /// <returns>Test result with compilation and analyzer diagnostics</returns>
         public async Task<AnalyzerTestResult> RunAnalyzerTest(string source)
         {
-            var compilation = await CreateTestCompilation(source);
+            Compilation compilation = await CreateTestCompilation(source);
             var compilationDiagnostics = compilation.GetDiagnostics().ToList();
             
             // Run the analyzer
@@ -272,11 +271,11 @@ namespace DtfDeterminismAnalyzer.Tests
             
             if (compilationDiagnostics.All(d => d.Severity != DiagnosticSeverity.Error))
             {
-                var compilationWithAnalyzers = compilation.WithAnalyzers(
+                CompilationWithAnalyzers compilationWithAnalyzers = compilation.WithAnalyzers(
                     ImmutableArray.Create<DiagnosticAnalyzer>(analyzer),
                     GetAnalyzerOptions());
-                
-                var analyzerResults = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
+
+                ImmutableArray<Diagnostic> analyzerResults = await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
                 analyzerDiagnostics.AddRange(analyzerResults);
             }
 

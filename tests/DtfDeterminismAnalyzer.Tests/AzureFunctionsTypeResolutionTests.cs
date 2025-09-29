@@ -1,10 +1,9 @@
-using System;
+using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
+using DtfDeterminismAnalyzer.Analyzers;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -33,16 +32,16 @@ public class WebJobsTypesTest
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
-            
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
+
             // Verify FunctionName attribute is resolved
-            var functionNameSymbol = compilation.GetTypeByMetadataName("Microsoft.Azure.WebJobs.FunctionNameAttribute");
+            INamedTypeSymbol? functionNameSymbol = compilation.GetTypeByMetadataName("Microsoft.Azure.WebJobs.FunctionNameAttribute");
             Assert.IsNotNull(functionNameSymbol, 
                 "FunctionNameAttribute must be resolved from Microsoft.Azure.WebJobs assembly");
             
             var webJobsErrors = compilation.GetDiagnostics()
-                .Where(d => d.Id == "CS0246" && d.GetMessage().Contains("FunctionName"))
+                .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("FunctionName"))
                 .ToList();
             
             Assert.IsEmpty(webJobsErrors, 
@@ -79,24 +78,24 @@ public class DurableTaskTypesTest
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
-            
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
+
             // Verify key DurableTask types are resolved
-            var orchestrationContextSymbol = compilation.GetTypeByMetadataName("Microsoft.Azure.WebJobs.Extensions.DurableTask.IDurableOrchestrationContext");
+            INamedTypeSymbol? orchestrationContextSymbol = compilation.GetTypeByMetadataName("Microsoft.Azure.WebJobs.Extensions.DurableTask.IDurableOrchestrationContext");
             Assert.IsNotNull(orchestrationContextSymbol, 
                 "IDurableOrchestrationContext must be resolved from DurableTask extensions");
             
             var durableTaskErrors = compilation.GetDiagnostics()
                 .Where(d => d.Id == "CS0246" && 
-                           (d.GetMessage().Contains("OrchestrationTrigger") ||
-                            d.GetMessage().Contains("ActivityTrigger") ||
-                            d.GetMessage().Contains("DurableClient") ||
-                            d.GetMessage().Contains("IDurableOrchestrationContext")))
+                           (d.GetMessage(CultureInfo.InvariantCulture).Contains("OrchestrationTrigger") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("ActivityTrigger") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("DurableClient") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("IDurableOrchestrationContext")))
                 .ToList();
             
             Assert.IsEmpty(durableTaskErrors, 
-                $"DurableTask extension types must be resolved without errors. Found: {string.Join(", ", durableTaskErrors.Select(d => d.GetMessage()))}");
+                $"DurableTask extension types must be resolved without errors. Found: {string.Join(", ", durableTaskErrors.Select(d => d.GetMessage(CultureInfo.InvariantCulture)))}");
         }
 
         [Test]
@@ -120,28 +119,28 @@ public class AspNetCoreTypesTest
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
-            
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
+
             // Verify ASP.NET Core types are resolved
-            var actionResultSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.IActionResult");
+            INamedTypeSymbol? actionResultSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.IActionResult");
             Assert.IsNotNull(actionResultSymbol, 
                 "IActionResult must be resolved from Microsoft.AspNetCore.Mvc assembly");
-            
-            var httpRequestSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpRequest");
+
+            INamedTypeSymbol? httpRequestSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpRequest");
             Assert.IsNotNull(httpRequestSymbol, 
                 "HttpRequest must be resolved from Microsoft.AspNetCore.Http assembly");
             
             var aspNetCoreErrors = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error && 
-                           (d.GetMessage().Contains("IActionResult") ||
-                            d.GetMessage().Contains("HttpRequest") ||
-                            d.GetMessage().Contains("HttpTrigger") ||
-                            d.GetMessage().Contains("OkObjectResult")))
+                           (d.GetMessage(CultureInfo.InvariantCulture).Contains("IActionResult") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("HttpRequest") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("HttpTrigger") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("OkObjectResult")))
                 .ToList();
             
             Assert.IsEmpty(aspNetCoreErrors, 
-                $"ASP.NET Core types must be resolved without errors. Found: {string.Join(", ", aspNetCoreErrors.Select(d => d.GetMessage()))}");
+                $"ASP.NET Core types must be resolved without errors. Found: {string.Join(", ", aspNetCoreErrors.Select(d => d.GetMessage(CultureInfo.InvariantCulture)))}");
         }
 
         [Test]
@@ -168,16 +167,16 @@ public class LoggingTypesTest
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
-            
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
+
             // Verify ILogger is resolved
-            var loggerSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
+            INamedTypeSymbol? loggerSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
             Assert.IsNotNull(loggerSymbol, 
                 "ILogger must be resolved from Microsoft.Extensions.Logging assembly");
             
             var loggingErrors = compilation.GetDiagnostics()
-                .Where(d => d.Id == "CS0246" && d.GetMessage().Contains("ILogger"))
+                .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("ILogger"))
                 .ToList();
             
             Assert.IsEmpty(loggingErrors, 
@@ -188,21 +187,21 @@ public class LoggingTypesTest
         public void ResolveTypes_WithConsistentInput_HasConsistentAssemblyLoading()
         {
             // Integration contract: Assembly loading must be consistent across test runs
-            var testBase1 = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var testBase2 = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0002GuidAnalyzer>();
+            var testBase1 = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            var testBase2 = new AnalyzerTestBase<Dfa0002GuidAnalyzer>();
             
             var references1 = testBase1.GetReferenceAssemblies().ToList();
             var references2 = testBase2.GetReferenceAssemblies().ToList();
             
             Assert.AreEqual(references1.Count, references2.Count,
                 "Assembly reference count must be consistent across different analyzer test instances");
-            
-            var webJobsRef1 = references1.FirstOrDefault(r => r.Display?.Contains("Microsoft.Azure.WebJobs") == true);
-            var webJobsRef2 = references2.FirstOrDefault(r => r.Display?.Contains("Microsoft.Azure.WebJobs") == true);
+
+            MetadataReference? webJobsRef1 = references1.FirstOrDefault(r => r.Display?.Contains("Microsoft.Azure.WebJobs") == true);
+            MetadataReference? webJobsRef2 = references2.FirstOrDefault(r => r.Display?.Contains("Microsoft.Azure.WebJobs") == true);
             
             Assert.IsNotNull(webJobsRef1, "First test base must include WebJobs assembly");
             Assert.IsNotNull(webJobsRef2, "Second test base must include WebJobs assembly");
-            Assert.AreEqual(webJobsRef1.Display, webJobsRef2.Display, 
+            Assert.AreEqual(webJobsRef1?.Display, webJobsRef2?.Display, 
                 "WebJobs assembly reference must be identical across test base instances");
         }
 
@@ -294,17 +293,17 @@ public class CustomOrchestrationContext : IDurableOrchestrationContext, ICustomO
     public Guid NewGuid() => Guid.NewGuid();
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var inheritanceErrors = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error && 
-                           (d.GetMessage().Contains("IDurableOrchestrationContext") ||
-                            d.GetMessage().Contains("DurableOrchestrationContextBase")))
+                           (d.GetMessage(CultureInfo.InvariantCulture).Contains("IDurableOrchestrationContext") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("DurableOrchestrationContextBase")))
                 .ToList();
             
             Assert.IsEmpty(inheritanceErrors, 
-                $"Complex inheritance scenarios with DurableTask types must be supported. Errors: {string.Join(", ", inheritanceErrors.Select(d => d.GetMessage()))}");
+                $"Complex inheritance scenarios with DurableTask types must be supported. Errors: {string.Join(", ", inheritanceErrors.Select(d => d.GetMessage(CultureInfo.InvariantCulture)))}");
         }
     }
 }

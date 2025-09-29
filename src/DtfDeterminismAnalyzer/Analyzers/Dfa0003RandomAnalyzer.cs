@@ -129,14 +129,14 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // For example: var seed = DateTime.Now.Millisecond; var random = new Random(seed);
             if (argument.Expression is IdentifierNameSyntax identifier)
             {
-                var identifierSymbol = semanticModel.GetSymbolInfo(identifier).Symbol;
+                ISymbol? identifierSymbol = semanticModel.GetSymbolInfo(identifier).Symbol;
                 if (identifierSymbol is ILocalSymbol localSymbol)
                 {
                     // Try to find the local variable declaration and check its initializer
-                    var syntaxReference = localSymbol.DeclaringSyntaxReferences.FirstOrDefault();
+                    SyntaxReference? syntaxReference = localSymbol.DeclaringSyntaxReferences.FirstOrDefault();
                     if (syntaxReference != null)
                     {
-                        var declarationSyntax = syntaxReference.GetSyntax();
+                        SyntaxNode declarationSyntax = syntaxReference.GetSyntax();
                         if (declarationSyntax is VariableDeclaratorSyntax variableDeclarator &&
                             variableDeclarator.Initializer?.Value != null)
                         {
@@ -208,7 +208,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                     // Check if this is accessing a static/instance field that may be non-deterministic
                     if (memberAccess.Expression is IdentifierNameSyntax identifier)
                     {
-                        var identifierSymbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
+                        ISymbol? identifierSymbol = context.SemanticModel.GetSymbolInfo(identifier).Symbol;
                         if (identifierSymbol is IFieldSymbol fieldSymbol)
                         {
                             // Check if this Random field was initialized non-deterministically
@@ -237,11 +237,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static bool IsFieldNonDeterministic(IFieldSymbol fieldSymbol, SemanticModel semanticModel)
         {
             // Get the field declaration syntax
-            var syntaxReference = fieldSymbol.DeclaringSyntaxReferences.FirstOrDefault();
+            SyntaxReference? syntaxReference = fieldSymbol.DeclaringSyntaxReferences.FirstOrDefault();
             if (syntaxReference == null)
                 return false;
 
-            var fieldDeclarationSyntax = syntaxReference.GetSyntax();
+            SyntaxNode fieldDeclarationSyntax = syntaxReference.GetSyntax();
             if (fieldDeclarationSyntax is not VariableDeclaratorSyntax variableDeclarator)
                 return false;
 

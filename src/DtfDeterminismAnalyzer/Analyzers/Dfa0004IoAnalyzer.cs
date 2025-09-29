@@ -38,7 +38,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
-            var memberAccess = (MemberAccessExpressionSyntax)context.Node;
+            MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
@@ -61,10 +61,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for File I/O operations
             if (IsFileIoOperation(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var key = (orchestratorMethod, memberSymbol);
+                    (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
                     if (reportedIoOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -79,10 +79,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for HTTP client operations
             if (IsHttpClientOperation(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var key = (orchestratorMethod, memberSymbol);
+                    (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
                     if (reportedIoOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -97,10 +97,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for Directory operations
             if (IsDirectoryOperation(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var key = (orchestratorMethod, memberSymbol);
+                    (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
                     if (reportedIoOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -114,7 +114,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static void AnalyzeInvocationExpression(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
-            var invocation = (InvocationExpressionSyntax)context.Node;
+            InvocationExpressionSyntax invocation = (InvocationExpressionSyntax)context.Node;
 
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(invocation, context.SemanticModel))
@@ -141,10 +141,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 IsNetworkOperation(containingType, methodSymbol.Name) ||
                 IsConsoleOperation(containingType, methodSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(invocation);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(invocation);
                 if (orchestratorMethod != null)
                 {
-                    var key = (orchestratorMethod, (ISymbol)methodSymbol);
+                    (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, (ISymbol)methodSymbol);
                     if (reportedIoOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -158,7 +158,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static void AnalyzeObjectCreationExpression(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, ISymbol IoOperation), bool> reportedIoOperations)
         {
-            var objectCreation = (ObjectCreationExpressionSyntax)context.Node;
+            ObjectCreationExpressionSyntax objectCreation = (ObjectCreationExpressionSyntax)context.Node;
 
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(objectCreation, context.SemanticModel))
@@ -178,10 +178,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for I/O related object creations
             if (containingNamespace != null && IsIoRelatedType(typeName, containingNamespace))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(objectCreation);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(objectCreation);
                 if (orchestratorMethod != null)
                 {
-                    var key = (orchestratorMethod, (ISymbol)typeInfo.Type);
+                    (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, (ISymbol)typeInfo.Type);
                     if (reportedIoOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -298,7 +298,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static MethodDeclarationSyntax? GetContainingOrchestratorMethod(SyntaxNode node)
         {
             // First find any containing method
-            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (containingMethod == null)
             {
                 return null;
@@ -312,10 +312,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // If not, look for other methods in the same class that have the [OrchestrationTrigger] attribute
             // This handles cases where I/O operations are in helper methods within the orchestrator class
-            var containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            ClassDeclarationSyntax? containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
             {
-                foreach (var method in containingClass.Members.OfType<MethodDeclarationSyntax>())
+                foreach (MethodDeclarationSyntax method in containingClass.Members.OfType<MethodDeclarationSyntax>())
                 {
                     if (HasOrchestrationTriggerAttribute(method))
                     {
@@ -332,13 +332,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// </summary>
         private static bool HasOrchestrationTriggerAttribute(MethodDeclarationSyntax method)
         {
-            foreach (var parameterList in method.ParameterList.Parameters)
+            foreach (ParameterSyntax parameterList in method.ParameterList.Parameters)
             {
-                foreach (var attributeList in parameterList.AttributeLists)
+                foreach (AttributeListSyntax attributeList in parameterList.AttributeLists)
                 {
-                    foreach (var attribute in attributeList.Attributes)
+                    foreach (AttributeSyntax attribute in attributeList.Attributes)
                     {
-                        var attributeName = attribute.Name.ToString();
+                        string attributeName = attribute.Name.ToString();
                         if (attributeName.Contains("OrchestrationTrigger"))
                         {
                             return true;

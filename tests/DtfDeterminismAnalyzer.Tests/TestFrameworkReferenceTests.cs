@@ -1,6 +1,5 @@
-using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
@@ -19,10 +18,10 @@ namespace DtfDeterminismAnalyzer.Tests
         public void TestFramework_WithDefaultSetup_IncludesAzureFunctionsWebJobsAssembly()
         {
             // Contract: TestFrameworkConfiguration must include Microsoft.Azure.WebJobs assembly
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var references = testBase.GetReferenceAssemblies();
-            
-            var webJobsAssembly = references.FirstOrDefault(r => 
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            IEnumerable<MetadataReference> references = testBase.GetReferenceAssemblies();
+
+            MetadataReference? webJobsAssembly = references.FirstOrDefault(r => 
                 r.Display?.Contains("Microsoft.Azure.WebJobs") == true);
             
             Assert.IsNotNull(webJobsAssembly, 
@@ -33,10 +32,10 @@ namespace DtfDeterminismAnalyzer.Tests
         public void TestFramework_WithDefaultSetup_IncludesDurableTaskExtensionsAssembly()
         {
             // Contract: TestFrameworkConfiguration must include DurableTask extensions
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var references = testBase.GetReferenceAssemblies();
-            
-            var durableTaskAssembly = references.FirstOrDefault(r => 
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            IEnumerable<MetadataReference> references = testBase.GetReferenceAssemblies();
+
+            MetadataReference? durableTaskAssembly = references.FirstOrDefault(r => 
                 r.Display?.Contains("Microsoft.Azure.WebJobs.Extensions.DurableTask") == true);
             
             Assert.IsNotNull(durableTaskAssembly, 
@@ -47,10 +46,10 @@ namespace DtfDeterminismAnalyzer.Tests
         public void TestFramework_WithDefaultSetup_IncludesAspNetCoreMvcAssembly()
         {
             // Contract: TestFrameworkConfiguration must include ASP.NET Core MVC types
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var references = testBase.GetReferenceAssemblies();
-            
-            var mvcAssembly = references.FirstOrDefault(r => 
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            IEnumerable<MetadataReference> references = testBase.GetReferenceAssemblies();
+
+            MetadataReference? mvcAssembly = references.FirstOrDefault(r => 
                 r.Display?.Contains("Microsoft.AspNetCore.Mvc") == true);
             
             Assert.IsNotNull(mvcAssembly, 
@@ -61,10 +60,10 @@ namespace DtfDeterminismAnalyzer.Tests
         public void TestFramework_WithDefaultSetup_IncludesExtensionsLoggingAssembly()
         {
             // Contract: TestFrameworkConfiguration must include Microsoft.Extensions.Logging
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var references = testBase.GetReferenceAssemblies();
-            
-            var loggingAssembly = references.FirstOrDefault(r => 
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            IEnumerable<MetadataReference> references = testBase.GetReferenceAssemblies();
+
+            MetadataReference? loggingAssembly = references.FirstOrDefault(r => 
                 r.Display?.Contains("Microsoft.Extensions.Logging") == true);
             
             Assert.IsNotNull(loggingAssembly, 
@@ -75,8 +74,8 @@ namespace DtfDeterminismAnalyzer.Tests
         public void TestFramework_WithDefaultSetup_UsesNet80ReferenceAssemblies()
         {
             // Contract: TestFrameworkConfiguration must use .NET 8.0 reference assemblies
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var referenceAssemblies = testBase.TestReferenceAssemblies;
+            var testBase = new AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>();
+            ReferenceAssemblies referenceAssemblies = testBase.TestReferenceAssemblies;
             
             Assert.IsNotNull(referenceAssemblies, "ReferenceAssemblies must be configured");
             Assert.AreEqual("net8.0", referenceAssemblies.TargetFramework, 

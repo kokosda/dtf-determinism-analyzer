@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 namespace DtfDeterminismAnalyzer.Tests
@@ -10,7 +9,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic time APIs and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0001TimeApiTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
+    public class Dfa0001TimeApiTests : AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -34,7 +33,7 @@ public class TestOrchestrator
 }";
 
             // Use AnalyzerTestBase methods to run the test
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -43,8 +42,8 @@ public class TestOrchestrator
             // Verify analyzer diagnostics
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
             Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0001 diagnostic");
-            
-            var diagnostic = analyzerDiagnostics[0];
+
+            Microsoft.CodeAnalysis.Diagnostic diagnostic = analyzerDiagnostics[0];
             Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                 "Diagnostic message should match expected message");
         }
@@ -54,7 +53,7 @@ public class TestOrchestrator
         /// </summary>
         private async Task VerifyDFA0001Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -63,8 +62,8 @@ public class TestOrchestrator
             // Verify analyzer diagnostics
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0001").ToList();
             Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0001 diagnostic");
-            
-            var diagnostic = analyzerDiagnostics[0];
+
+            Microsoft.CodeAnalysis.Diagnostic diagnostic = analyzerDiagnostics[0];
             Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                 "Diagnostic message should match expected message");
         }
@@ -74,7 +73,7 @@ public class TestOrchestrator
         /// </summary>
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -90,7 +89,7 @@ public class TestOrchestrator
         /// </summary>
         private async Task VerifyMultipleDFA0001Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             
             // Verify compilation succeeded
             Assert.IsTrue(result.CompilationSucceeded, 
@@ -101,7 +100,7 @@ public class TestOrchestrator
             Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0001 diagnostics");
             
             // Verify all diagnostics have the expected message
-            foreach (var diagnostic in analyzerDiagnostics)
+            foreach (Microsoft.CodeAnalysis.Diagnostic? diagnostic in analyzerDiagnostics)
             {
                 Assert.AreEqual("Non-deterministic time API used in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                     "Diagnostic message should match expected message");

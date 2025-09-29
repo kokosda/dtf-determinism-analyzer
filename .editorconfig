@@ -120,6 +120,10 @@ csharp_style_var_for_built_in_types = false:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_var_elsewhere = false:suggestion
 
+# IDE Rules for code style enforcement
+dotnet_diagnostic.IDE0001.severity = error  # Remove unnecessary using directives
+dotnet_diagnostic.IDE0008.severity = error  # Use explicit type instead of 'var'
+
 # Expression-bodied members
 csharp_style_expression_bodied_methods = false:suggestion
 csharp_style_expression_bodied_constructors = false:suggestion

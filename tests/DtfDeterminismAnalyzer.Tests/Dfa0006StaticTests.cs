@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 
@@ -11,7 +10,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects non-deterministic static state access and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0006StaticTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0006StaticAnalyzer>
+    public class Dfa0006StaticTests : AnalyzerTestBase<Analyzers.Dfa0006StaticAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -22,19 +21,19 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
         private async Task VerifyDFA0006Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
             Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0006 diagnostic");
-            var diagnostic = analyzerDiagnostics[0];
+            Microsoft.CodeAnalysis.Diagnostic diagnostic = analyzerDiagnostics[0];
             Assert.AreEqual("Static field access in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                 "Diagnostic message should match expected message");
         }
 
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
@@ -43,12 +42,12 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
         private async Task VerifyMultipleDFA0006Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0006").ToList();
             Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0006 diagnostics");
-            foreach (var diagnostic in analyzerDiagnostics)
+            foreach (Microsoft.CodeAnalysis.Diagnostic? diagnostic in analyzerDiagnostics)
             {
                 Assert.AreEqual("Static field access in orchestrator", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                     "Diagnostic message should match expected message");

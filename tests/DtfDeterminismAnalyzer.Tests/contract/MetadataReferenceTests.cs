@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -11,20 +12,20 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These contract tests ensure the typeof().Assembly.Location pattern works correctly.
     /// </summary>
     [TestFixture]
-    public class MetadataReferenceTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>
+    public class MetadataReferenceTests : AnalyzerTestBase<Analyzers.Dfa0001TimeApiAnalyzer>
     {
         [Test]
         public void CreateAzureFunctionsMetadataReferences_WithValidAssemblies_ReturnsValidReferences()
         {
             // Act
-            var references = CreateAzureFunctionsMetadataReferences().ToList();
+            List<MetadataReference> references = CreateAzureFunctionsMetadataReferences().ToList();
 
             // Assert
             Assert.That(references, Is.Not.Empty, "Should return at least some metadata references");
             Assert.That(references.All(r => r != null), Is.True, "All references should be non-null");
             
             // Verify each reference has valid display information
-            foreach (var reference in references)
+            foreach (MetadataReference reference in references)
             {
                 Assert.That(string.IsNullOrEmpty(reference.Display), Is.False, 
                     $"Reference should have valid display information: {reference.Display}");
@@ -40,7 +41,7 @@ namespace DtfDeterminismAnalyzer.Tests
             // Act & Assert - should not throw
             Assert.DoesNotThrow(() =>
             {
-                var references = CreateAzureFunctionsMetadataReferences().ToList();
+                List<MetadataReference> references = CreateAzureFunctionsMetadataReferences().ToList();
                 // Even if some assemblies are missing, we should get a valid (possibly empty) collection
                 Assert.That(references, Is.Not.Null);
             });
@@ -66,19 +67,19 @@ public class TestFunction
             // Act & Assert - should not throw
             Assert.DoesNotThrowAsync(async () =>
             {
-                var compilation = await CreateTestCompilationWithAssemblyReferences(testCode);
+                Compilation compilation = await CreateTestCompilationWithAssemblyReferences(testCode);
                 
                 Assert.That(compilation, Is.Not.Null);
                 Assert.That(compilation.SyntaxTrees.Count(), Is.EqualTo(1));
                 Assert.That(compilation.References.Count(), Is.GreaterThan(0));
                 
                 // Verify the compilation doesn't have critical errors
-                var diagnostics = compilation.GetDiagnostics()
+                List<Diagnostic> diagnostics = compilation.GetDiagnostics()
                     .Where(d => d.Severity == DiagnosticSeverity.Error)
                     .ToList();
                 
                 // Filter out any CS0246 or CS0234 errors which are what we're trying to fix
-                var criticalErrors = diagnostics
+                List<Diagnostic> criticalErrors = diagnostics
                     .Where(d => !d.Id.StartsWith("CS0246", StringComparison.Ordinal) && !d.Id.StartsWith("CS0234", StringComparison.Ordinal))
                     .ToList();
                 
@@ -91,16 +92,16 @@ public class TestFunction
         public void CreateMetadataReference_WithSameInput_IsDeterministic()
         {
             // Act - call the method multiple times
-            var references1 = CreateAzureFunctionsMetadataReferences().ToList();
-            var references2 = CreateAzureFunctionsMetadataReferences().ToList();
+            List<MetadataReference> references1 = CreateAzureFunctionsMetadataReferences().ToList();
+            List<MetadataReference> references2 = CreateAzureFunctionsMetadataReferences().ToList();
 
             // Assert - results should be consistent
             Assert.That(references1.Count, Is.EqualTo(references2.Count), 
                 "Should return the same number of references each time");
             
             // Compare display strings (assembly paths) for consistency
-            var displays1 = references1.Select(r => r.Display).OrderBy(d => d).ToList();
-            var displays2 = references2.Select(r => r.Display).OrderBy(d => d).ToList();
+            List<string?> displays1 = references1.Select(r => r.Display).OrderBy(d => d).ToList();
+            List<string?> displays2 = references2.Select(r => r.Display).OrderBy(d => d).ToList();
             
             Assert.That(displays1, Is.EqualTo(displays2), 
                 "Should return references to the same assemblies each time");

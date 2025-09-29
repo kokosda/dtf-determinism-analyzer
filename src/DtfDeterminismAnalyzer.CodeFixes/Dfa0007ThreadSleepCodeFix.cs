@@ -190,7 +190,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
                     SyntaxFactory.IdentifierName(orchestratorContextParameter),
                     SyntaxFactory.IdentifierName("CreateTimer")))
                 .WithArgumentList(SyntaxFactory.ArgumentList(
-                    SyntaxFactory.SeparatedList<ArgumentSyntax>(new[]
+                    SyntaxFactory.SeparatedList(new[]
                     {
                         SyntaxFactory.Argument(delayExpression),
                         SyntaxFactory.Argument(

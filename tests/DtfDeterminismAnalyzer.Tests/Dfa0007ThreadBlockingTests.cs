@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 
 namespace DtfDeterminismAnalyzer.Tests
@@ -10,7 +9,7 @@ namespace DtfDeterminismAnalyzer.Tests
     /// These tests validate that the analyzer detects thread-blocking operations and reports appropriate diagnostics.
     /// </summary>
     [TestFixture]
-    public class Dfa0007ThreadBlockingTests : AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0007ThreadBlockingAnalyzer>
+    public class Dfa0007ThreadBlockingTests : AnalyzerTestBase<Analyzers.Dfa0007ThreadBlockingAnalyzer>
     {
         private const string OrchestrationTriggerUsing = @"
 using System;
@@ -22,19 +21,19 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
         private async Task VerifyDFA0007Diagnostic(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
             Assert.AreEqual(1, analyzerDiagnostics.Count, "Should report exactly one DFA0007 diagnostic");
-            var diagnostic = analyzerDiagnostics[0];
+            Microsoft.CodeAnalysis.Diagnostic diagnostic = analyzerDiagnostics[0];
             Assert.AreEqual("Thread-blocking call detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                 "Diagnostic message should match expected message");
         }
 
         private async Task VerifyNoDiagnostics(string testCode)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
@@ -43,12 +42,12 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 
         private async Task VerifyMultipleDFA0007Diagnostics(string testCode, int expectedCount)
         {
-            var result = await RunAnalyzerTest(testCode);
+            AnalyzerTestResult result = await RunAnalyzerTest(testCode);
             Assert.IsTrue(result.CompilationSucceeded, 
                 $"Compilation should succeed. Errors: {string.Join(", ", result.CompilationDiagnostics.Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error).Select(d => d.GetMessage(System.Globalization.CultureInfo.InvariantCulture)))}");
             var analyzerDiagnostics = result.AnalyzerDiagnostics.Where(d => d.Id == "DFA0007").ToList();
             Assert.AreEqual(expectedCount, analyzerDiagnostics.Count, $"Should report exactly {expectedCount} DFA0007 diagnostics");
-            foreach (var diagnostic in analyzerDiagnostics)
+            foreach (Microsoft.CodeAnalysis.Diagnostic? diagnostic in analyzerDiagnostics)
             {
                 Assert.AreEqual("Thread-blocking call detected", diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), 
                     "Diagnostic message should match expected message");

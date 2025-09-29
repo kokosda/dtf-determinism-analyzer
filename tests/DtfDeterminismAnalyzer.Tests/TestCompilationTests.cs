@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
+using DtfDeterminismAnalyzer.Analyzers;
 
 namespace DtfDeterminismAnalyzer.Tests
 {
@@ -34,8 +34,8 @@ public class TestClass
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var diagnostics = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error)
@@ -63,8 +63,8 @@ public class TestClass
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var orchestrationTriggerErrors = compilation.GetDiagnostics()
                 .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("OrchestrationTrigger"))
@@ -95,8 +95,8 @@ public class TestClass
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var httpErrors = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error && 
@@ -131,8 +131,8 @@ public class TestClass
     }
 }";
 
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var compilation = await testBase.CreateTestCompilation(testCode);
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            Compilation compilation = await testBase.CreateTestCompilation(testCode);
             
             var loggerErrors = compilation.GetDiagnostics()
                 .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("ILogger"))
@@ -146,8 +146,8 @@ public class TestClass
         public void GetParseOptions_WithDefaultConfiguration_UsesCSharp12LanguageVersion()
         {
             // Contract: Test compilation must use C# 12.0 for compatibility
-            var testBase = new AnalyzerTestBase<DtfDeterminismAnalyzer.Analyzers.Dfa0001TimeApiAnalyzer>();
-            var parseOptions = testBase.GetParseOptions();
+            var testBase = new AnalyzerTestBase<Dfa0001TimeApiAnalyzer>();
+            CSharpParseOptions parseOptions = testBase.GetParseOptions();
             
             Assert.AreEqual(LanguageVersion.CSharp12, parseOptions.LanguageVersion,
                 "Test compilation must use C# 12.0 language version");

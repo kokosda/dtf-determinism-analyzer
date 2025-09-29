@@ -37,7 +37,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
         private static void AnalyzeMemberAccess(SyntaxNodeAnalysisContext context, ConcurrentDictionary<(MethodDeclarationSyntax OrchestratorMethod, string OperationKey), bool> reportedEnvironmentOperations)
         {
-            var memberAccess = (MemberAccessExpressionSyntax)context.Node;
+            MemberAccessExpressionSyntax memberAccess = (MemberAccessExpressionSyntax)context.Node;
 
             // Skip analysis if not in orchestrator function
             if (!OrchestratorContextDetector.IsNodeWithinOrchestratorMethod(memberAccess, context.SemanticModel))
@@ -60,11 +60,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for Environment class operations
             if (IsEnvironmentOperation(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
-                    var key = (orchestratorMethod, operationKey);
+                    string operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
+                    (MethodDeclarationSyntax orchestratorMethod, string operationKey) key = (orchestratorMethod, operationKey);
                     if (reportedEnvironmentOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -79,11 +79,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for system properties
             if (IsSystemPropertyAccess(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
-                    var key = (orchestratorMethod, operationKey);
+                    string operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
+                    (MethodDeclarationSyntax orchestratorMethod, string operationKey) key = (orchestratorMethod, operationKey);
                     if (reportedEnvironmentOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -98,11 +98,11 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for operating system specific operations
             if (IsOperatingSystemOperation(containingType, memberSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
                 if (orchestratorMethod != null)
                 {
-                    var operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
-                    var key = (orchestratorMethod, operationKey);
+                    string operationKey = $"{memberSymbol.ToDisplayString()}@{memberAccess.GetLocation().GetLineSpan().StartLinePosition}";
+                    (MethodDeclarationSyntax orchestratorMethod, string operationKey) key = (orchestratorMethod, operationKey);
                     if (reportedEnvironmentOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -143,12 +143,12 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 IsProcessOperation(containingType, methodSymbol.Name) ||
                 IsRegistryOperation(containingType, methodSymbol.Name))
             {
-                var orchestratorMethod = GetContainingOrchestratorMethod(invocation);
+                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(invocation);
                 if (orchestratorMethod != null)
                 {
                     // Use a unique key based on the method symbol and invocation location to distinguish multiple calls
-                    var operationKey = $"{methodSymbol.ToDisplayString()}@{invocation.GetLocation().GetLineSpan().StartLinePosition}";
-                    var key = (orchestratorMethod, operationKey);
+                    string operationKey = $"{methodSymbol.ToDisplayString()}@{invocation.GetLocation().GetLineSpan().StartLinePosition}";
+                    (MethodDeclarationSyntax orchestratorMethod, string operationKey) key = (orchestratorMethod, operationKey);
                     if (reportedEnvironmentOperations.TryAdd(key, true))
                     {
                         context.ReportDiagnostic(Diagnostic.Create(
@@ -273,7 +273,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
         private static MethodDeclarationSyntax? GetContainingOrchestratorMethod(SyntaxNode node)
         {
             // First find any containing method
-            var containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+            MethodDeclarationSyntax? containingMethod = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (containingMethod == null)
             {
                 return null;
@@ -287,10 +287,10 @@ namespace DtfDeterminismAnalyzer.Analyzers
 
             // If not, look for other methods in the same class that have the [OrchestrationTrigger] attribute
             // This handles cases where Environment operations are in helper methods within the orchestrator class
-            var containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
+            ClassDeclarationSyntax? containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
             {
-                foreach (var method in containingClass.Members.OfType<MethodDeclarationSyntax>())
+                foreach (MethodDeclarationSyntax method in containingClass.Members.OfType<MethodDeclarationSyntax>())
                 {
                     if (HasOrchestrationTriggerAttribute(method))
                     {
@@ -307,13 +307,13 @@ namespace DtfDeterminismAnalyzer.Analyzers
         /// </summary>
         private static bool HasOrchestrationTriggerAttribute(MethodDeclarationSyntax method)
         {
-            foreach (var parameterList in method.ParameterList.Parameters)
+            foreach (ParameterSyntax parameterList in method.ParameterList.Parameters)
             {
-                foreach (var attributeList in parameterList.AttributeLists)
+                foreach (AttributeListSyntax attributeList in parameterList.AttributeLists)
                 {
-                    foreach (var attribute in attributeList.Attributes)
+                    foreach (AttributeSyntax attribute in attributeList.Attributes)
                     {
-                        var attributeName = attribute.Name.ToString();
+                        string attributeName = attribute.Name.ToString();
                         if (attributeName.Contains("OrchestrationTrigger"))
                         {
                             return true;
