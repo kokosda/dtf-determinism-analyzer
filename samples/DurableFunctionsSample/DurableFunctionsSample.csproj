@@ -18,15 +18,8 @@
 
   <!-- Add the DTF Determinism Analyzer -->
   <ItemGroup>
-    <PackageReference Include="DtfDeterminismAnalyzer" 
-                      PrivateAssets="all" 
-                      IncludeAssets="analyzers" />
+    <Analyzer Include="../../src/DtfDeterminismAnalyzer/bin/Release/netstandard2.0/DtfDeterminismAnalyzer.dll" />
   </ItemGroup>
-
-  <!-- Add local NuGet source for analyzer package -->
-  <PropertyGroup>
-    <RestoreSources>$(RestoreSources);../../src/DtfDeterminismAnalyzer/bin/Release;https://api.nuget.org/v3/index.json</RestoreSources>
-  </PropertyGroup>
 
   <ItemGroup>
     <None Update="host.json">
