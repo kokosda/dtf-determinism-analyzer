@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -66,7 +67,7 @@ public class TestClass
             var compilation = await testBase.CreateTestCompilation(testCode);
             
             var orchestrationTriggerErrors = compilation.GetDiagnostics()
-                .Where(d => d.Id == "CS0246" && d.GetMessage().Contains("OrchestrationTrigger"))
+                .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("OrchestrationTrigger"))
                 .ToList();
             
             Assert.IsEmpty(orchestrationTriggerErrors, 
@@ -99,13 +100,13 @@ public class TestClass
             
             var httpErrors = compilation.GetDiagnostics()
                 .Where(d => d.Severity == DiagnosticSeverity.Error && 
-                           (d.GetMessage().Contains("IActionResult") || 
-                            d.GetMessage().Contains("HttpTrigger") ||
-                            d.GetMessage().Contains("HttpRequest")))
+                           (d.GetMessage(CultureInfo.InvariantCulture).Contains("IActionResult") || 
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("HttpTrigger") ||
+                            d.GetMessage(CultureInfo.InvariantCulture).Contains("HttpRequest")))
                 .ToList();
             
             Assert.IsEmpty(httpErrors, 
-                $"HTTP trigger types must be resolved during test compilation. Found errors: {string.Join(", ", httpErrors.Select(d => d.GetMessage()))}");
+                $"HTTP trigger types must be resolved during test compilation. Found errors: {string.Join(", ", httpErrors.Select(d => d.GetMessage(CultureInfo.InvariantCulture)))}");
         }
 
         [Test]
@@ -134,7 +135,7 @@ public class TestClass
             var compilation = await testBase.CreateTestCompilation(testCode);
             
             var loggerErrors = compilation.GetDiagnostics()
-                .Where(d => d.Id == "CS0246" && d.GetMessage().Contains("ILogger"))
+                .Where(d => d.Id == "CS0246" && d.GetMessage(CultureInfo.InvariantCulture).Contains("ILogger"))
                 .ToList();
             
             Assert.IsEmpty(loggerErrors, 

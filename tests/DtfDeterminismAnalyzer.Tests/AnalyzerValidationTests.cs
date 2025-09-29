@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -47,7 +49,7 @@ public class TestOrchestrator
             
             // Contract: Analyzer diagnostics should be reported
             var analyzerDiagnostics = result.AnalyzerDiagnostics
-                .Where(d => d.Id.StartsWith("DFA"))
+                .Where(d => d.Id.StartsWith("DFA", StringComparison.Ordinal))
                 .ToList();
             
             Assert.IsNotEmpty(analyzerDiagnostics, 
@@ -138,7 +140,7 @@ public class ComplexFunctionApp
                 .ToList();
             
             Assert.IsEmpty(errors, 
-                $"Complex Azure Functions scenarios must compile successfully. Errors: {string.Join(", ", errors.Select(d => $"{d.Id}: {d.GetMessage()}"))}");
+                $"Complex Azure Functions scenarios must compile successfully. Errors: {string.Join(", ", errors.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}"))}");
         }
 
         [Test]
@@ -169,7 +171,7 @@ public class TestOrchestrator
                 .Where(d => d.Id == "DFA0001")
                 .ToList();
             
-            if (timeApiDiagnostics.Any())
+            if (timeApiDiagnostics.Count > 0)
             {
                 var diagnostic = timeApiDiagnostics.First();
                 Assert.IsTrue(diagnostic.Location.GetLineSpan().StartLinePosition.Line >= 0,

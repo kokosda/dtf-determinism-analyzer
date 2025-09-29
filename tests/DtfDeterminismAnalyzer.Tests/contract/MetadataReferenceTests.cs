@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using NUnit.Framework;
@@ -78,11 +79,11 @@ public class TestFunction
                 
                 // Filter out any CS0246 or CS0234 errors which are what we're trying to fix
                 var criticalErrors = diagnostics
-                    .Where(d => !d.Id.StartsWith("CS0246") && !d.Id.StartsWith("CS0234"))
+                    .Where(d => !d.Id.StartsWith("CS0246", StringComparison.Ordinal) && !d.Id.StartsWith("CS0234", StringComparison.Ordinal))
                     .ToList();
                 
                 Assert.That(criticalErrors, Is.Empty, 
-                    $"Should not have critical compilation errors: {string.Join(", ", criticalErrors.Select(d => $"{d.Id}: {d.GetMessage()}"))}");
+                    $"Should not have critical compilation errors: {string.Join(", ", criticalErrors.Select(d => $"{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}"))}");
             });
         }
 
