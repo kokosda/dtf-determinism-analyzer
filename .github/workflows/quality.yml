@@ -1,0 +1,173 @@
+name: Documentation and Quality
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Check README exists and is not empty
+      run: |
+        if [ ! -f README.md ]; then
+          echo "❌ README.md not found"
+          exit 1
+        fi
+        
+        if [ ! -s README.md ]; then
+          echo "❌ README.md is empty"
+          exit 1
+        fi
+        
+        echo "✅ README.md exists and has content"
+    
+    - name: Check for required documentation sections
+      run: |
+        # Check for required sections in README
+        sections=("Installation" "Quick Start" "Rules" "Examples")
+        missing_sections=()
+        
+        for section in "${sections[@]}"; do
+          if ! grep -qi "$section" README.md; then
+            missing_sections+=("$section")
+          fi
+        done
+        
+        if [ ${#missing_sections[@]} -ne 0 ]; then
+          echo "❌ Missing required sections: ${missing_sections[*]}"
+          exit 1
+        else
+          echo "✅ All required documentation sections found"
+        fi
+    
+    - name: Validate package metadata
+      run: |
+        # Check that project file has required metadata
+        project_file="src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj"
+        
+        required_fields=("PackageId" "Description" "Authors" "PackageProjectUrl" "RepositoryUrl" "PackageTags")
+        missing_fields=()
+        
+        for field in "${required_fields[@]}"; do
+          if ! grep -q "<$field>" "$project_file"; then
+            missing_fields+=("$field")
+          fi
+        done
+        
+        if [ ${#missing_fields[@]} -ne 0 ]; then
+          echo "❌ Missing required metadata fields: ${missing_fields[*]}"
+          exit 1
+        else
+          echo "✅ All required package metadata fields found"
+        fi
+
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build with strict warnings
+      run: dotnet build --configuration Release --verbosity normal --no-restore
+      env:
+        DOTNET_TREAT_WARNINGS_AS_ERRORS: true
+    
+    - name: Run static analysis
+      run: dotnet build --verbosity detailed | grep -E "(warning|error)" | tee analysis-output.txt || true
+    
+    - name: Check for code analysis warnings
+      run: |
+        if [ -s analysis-output.txt ]; then
+          echo "⚠️ Static analysis found issues:"
+          cat analysis-output.txt
+          # Don't fail the build for warnings, just report them
+        else
+          echo "✅ No static analysis issues found"
+        fi
+    
+    - name: Verify tests compile and exist
+      run: |
+        test_files=$(find tests -name "*.cs" -type f | wc -l)
+        if [ "$test_files" -eq 0 ]; then
+          echo "❌ No test files found"
+          exit 1
+        else
+          echo "✅ Found $test_files test files"
+        fi
+    
+    - name: Check test coverage structure
+      run: |
+        # Verify each analyzer has corresponding tests
+        analyzers=$(find src -name "*Analyzer.cs" -type f | wc -l)
+        test_files=$(find tests -name "*Tests.cs" -type f | wc -l)
+        
+        echo "Found $analyzers analyzer files and $test_files test files"
+        
+        if [ "$test_files" -lt "$analyzers" ]; then
+          echo "⚠️ Fewer test files than analyzer files - consider adding more tests"
+        else
+          echo "✅ Good test file coverage ratio"
+        fi
+
+  file-validation:
+    name: File Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Check for required files
+      run: |
+        required_files=(
+          "README.md"
+          "LICENSE"
+          "src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj"
+          "src/DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj"
+          "tests/DtfDeterminismAnalyzer.Tests/DtfDeterminismAnalyzer.Tests.csproj"
+        )
+        
+        missing_files=()
+        
+        for file in "${required_files[@]}"; do
+          if [ ! -f "$file" ]; then
+            missing_files+=("$file")
+          fi
+        done
+        
+        if [ ${#missing_files[@]} -ne 0 ]; then
+          echo "❌ Missing required files: ${missing_files[*]}"
+          exit 1
+        else
+          echo "✅ All required files present"
+        fi
+    
+    - name: Validate file encodings
+      run: |
+        # Check that source files are UTF-8 encoded
+        find src tests -name "*.cs" -exec file {} \; | grep -v "UTF-8" | tee non-utf8-files.txt || true
+        
+        if [ -s non-utf8-files.txt ]; then
+          echo "⚠️ Found non-UTF-8 encoded files:"
+          cat non-utf8-files.txt
+        else
+          echo "✅ All source files are properly UTF-8 encoded"
+        fi

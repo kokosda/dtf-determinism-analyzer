@@ -461,7 +461,7 @@ TestCoverage/
 sonar-project.properties
 
 # Project-specific ignores
-.github/
+.github/prompts/
 .specify/
 specs/
 .vscode/

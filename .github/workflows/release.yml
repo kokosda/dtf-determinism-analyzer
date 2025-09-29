@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.1)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a prerelease?'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      tag: ${{ steps.validate.outputs.tag }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Validate version input
+      id: validate
+      run: |
+        VERSION="${{ github.event.inputs.version }}"
+        
+        # Validate semantic version format
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+          echo "❌ Invalid version format: $VERSION"
+          echo "Expected format: X.Y.Z or X.Y.Z-prerelease"
+          exit 1
+        fi
+        
+        TAG="v$VERSION"
+        
+        # Check if tag already exists
+        if git tag | grep -q "^$TAG$"; then
+          echo "❌ Tag $TAG already exists"
+          exit 1
+        fi
+        
+        echo "✅ Version $VERSION is valid and tag $TAG doesn't exist"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: validate-release
+    environment:
+      name: release
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Update version in project files
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Update main project file
+        sed -i "s/<Version>.*<\/Version>/<Version>$VERSION<\/Version>/" src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
+        
+        # Update assembly version
+        sed -i "s/<AssemblyVersion>.*<\/AssemblyVersion>/<AssemblyVersion>$VERSION.0<\/AssemblyVersion>/" src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
+        sed -i "s/<FileVersion>.*<\/FileVersion>/<FileVersion>$VERSION.0<\/FileVersion>/" src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
+    
+    - name: Build and test
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
+        dotnet test --configuration Release --no-build
+    
+    - name: Pack release
+      run: dotnet pack src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj --configuration Release --no-build --output ./release-artifacts
+      env:
+        CI: true
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        
+        # Generate release notes from git log since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        
+        if [ -n "$LAST_TAG" ]; then
+          echo "## Changes since $LAST_TAG" > release-notes.md
+          git log --oneline "$LAST_TAG"..HEAD --pretty=format:"- %s" >> release-notes.md
+        else
+          echo "## Initial Release" > release-notes.md
+          echo "- First release of DTF Determinism Analyzer" >> release-notes.md
+        fi
+        
+        echo "" >> release-notes.md
+        echo "## Package Information" >> release-notes.md
+        echo "- **Version**: $VERSION" >> release-notes.md
+        echo "- **Target Frameworks**: .NET 8.0, .NET Standard 2.0" >> release-notes.md
+        echo "- **Rules**: 10 determinism validation rules" >> release-notes.md
+        echo "- **Code Fixes**: Automatic fixes for DateTime, GUID, and Thread.Sleep violations" >> release-notes.md
+        
+        # Set output for later use
+        echo "notes_file=release-notes.md" >> $GITHUB_OUTPUT
+    
+    - name: Commit version updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
+        git commit -m "chore: bump version to ${{ needs.validate-release.outputs.version }}"
+    
+    - name: Create and push tag
+      run: |
+        TAG="${{ needs.validate-release.outputs.tag }}"
+        git tag "$TAG" -m "Release $TAG"
+        git push origin HEAD:"${{ github.ref_name }}"
+        git push origin "$TAG"
+    
+    - name: Create GitHub Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.validate-release.outputs.tag }}
+        release_name: Release ${{ needs.validate-release.outputs.version }}
+        body_path: ${{ steps.release_notes.outputs.notes_file }}
+        draft: false
+        prerelease: ${{ github.event.inputs.prerelease }}
+    
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-package-${{ needs.validate-release.outputs.version }}
+        path: ./release-artifacts/*.nupkg
+        retention-days: 90

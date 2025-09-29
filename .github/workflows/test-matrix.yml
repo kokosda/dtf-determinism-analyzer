@@ -1,0 +1,114 @@
+name: Cross-Platform Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-matrix:
+    name: Test on ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        dotnet-version: ['8.0.x', '9.0.x']
+        include:
+          # Add specific combinations for comprehensive testing
+          - os: ubuntu-latest
+            dotnet-version: '6.0.x'  # Test backward compatibility
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET ${{ matrix.dotnet-version }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ matrix.dotnet-version }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+    
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --logger trx --results-directory TestResults
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}
+        path: TestResults/*.trx
+        retention-days: 5
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Create test project
+      run: |
+        mkdir -p integration-test
+        cd integration-test
+        dotnet new console
+        dotnet add package Microsoft.Azure.WebJobs.Extensions.DurableTask
+    
+    - name: Build and pack analyzer
+      run: |
+        dotnet restore
+        dotnet pack src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj --configuration Release --output ./packages
+    
+    - name: Add local analyzer to test project
+      run: |
+        cd integration-test
+        dotnet add package DtfDeterminismAnalyzer --source ../packages --version 1.0.0
+    
+    - name: Create problematic code
+      run: |
+        cat > integration-test/Program.cs << 'EOF'
+        using Microsoft.Azure.WebJobs;
+        using Microsoft.Azure.WebJobs.Extensions.DurableTask;
+        using System;
+        using System.Threading.Tasks;
+
+        public static class TestOrchestrator
+        {
+            [FunctionName("TestOrchestrator")]
+            public static async Task<string> Run([OrchestrationTrigger] IDurableOrchestrationContext context)
+            {
+                var now = DateTime.Now; // Should trigger DFA0001
+                var id = Guid.NewGuid(); // Should trigger DFA0002
+                return $"{now}-{id}";
+            }
+        }
+        EOF
+    
+    - name: Build test project (should show analyzer warnings)
+      run: |
+        cd integration-test
+        dotnet build --verbosity normal 2>&1 | tee build-output.txt
+        
+    - name: Verify analyzer detected issues
+      run: |
+        cd integration-test
+        if grep -q "DFA0001" build-output.txt && grep -q "DFA0002" build-output.txt; then
+          echo "✅ Analyzer successfully detected determinism violations"
+        else
+          echo "❌ Analyzer failed to detect violations"
+          cat build-output.txt
+          exit 1
+        fi
