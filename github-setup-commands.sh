@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# GitHub Repository Setup Commands
-# Run these commands after creating the GitHub repository
-
-# Replace YOUR_USERNAME with your actual GitHub username
-GITHUB_USERNAME="YOUR_USERNAME"
+GITHUB_USERNAME="kokosda"
 REPO_NAME="dtf-determinism-analyzer"
 
 echo "Setting up GitHub remote and pushing..."

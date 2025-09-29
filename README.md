@@ -25,6 +25,7 @@ dotnet add package DtfDeterminismAnalyzer --version 1.0.0
 
 ### 2. Write Your Orchestrator
 
+**Azure Durable Functions:**
 ```csharp
 [FunctionName("MyOrchestrator")]
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
@@ -32,6 +33,19 @@ public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurable
     // The analyzer will automatically detect determinism issues
     var result = await context.CallActivityAsync<string>("MyActivity", "input");
     return result;
+}
+```
+
+**Durable Task Framework:**
+```csharp
+public class MyOrchestrator : TaskOrchestration<string, string>
+{
+    public override async Task<string> RunTask(OrchestrationContext context, string input)
+    {
+        // The analyzer will automatically detect determinism issues
+        var result = await context.ScheduleTask<string>(typeof(MyActivity), input);
+        return result;
+    }
 }
 ```
 
@@ -62,12 +76,30 @@ This package helps ensure your DTF orchestrator functions follow determinism rul
 - **Code fixes** - Automatic fixes to replace problematic code with durable alternatives
 - **IDE integration** - Works in Visual Studio, VS Code, and Rider
 
+## Supported Frameworks
+
+The analyzer supports both major Durable Task implementations:
+
+### 🔵 **Azure Durable Functions**
+- Uses `[OrchestrationTrigger]` parameters
+- Functions-based programming model
+- Built on top of Durable Task Framework
+- Serverless Azure Functions runtime
+
+### 🟢 **Durable Task Framework (DTF)**
+- Pure .NET framework for durable orchestrations
+- Class-based `TaskOrchestration<TResult, TInput>` model
+- Self-hosted or custom runtime
+- Direct usage of DTF primitives
+
+Both frameworks share the same determinism constraints and replay behavior, making this analyzer valuable for any durable orchestration code.
+
 ## Rules Reference
 
 ### DFA0001: DateTime and Stopwatch APIs
 **Don't use DateTime.Now, DateTime.UtcNow, or Stopwatch in orchestrators**
 
-❌ **Problem:**
+❌ **Problem (Azure Functions):**
 ```csharp
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
 {
@@ -77,20 +109,40 @@ public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurable
 }
 ```
 
-✅ **Solution:**
+❌ **Problem (DTF):**
+```csharp
+public override async Task<string> RunTask(OrchestrationContext context, string input)
+{
+    var now = DateTime.Now;  // Non-deterministic!
+    var utcNow = DateTime.UtcNow;  // Non-deterministic!
+    var stopwatch = Stopwatch.StartNew();  // Non-deterministic!
+}
+```
+
+✅ **Solution (Azure Functions):**
 ```csharp
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
 {
     var now = context.CurrentUtcDateTime.ToLocalTime();  // Deterministic
     var utcNow = context.CurrentUtcDateTime;  // Deterministic
-    var timer = await context.CreateTimer(context.CurrentUtcDateTime.AddSeconds(10), CancellationToken.None);  // Deterministic
+    var timer = await context.CreateTimer(context.CurrentUtcDateTime.AddSeconds(10), CancellationToken.None);
+}
+```
+
+✅ **Solution (DTF):**
+```csharp
+public override async Task<string> RunTask(OrchestrationContext context, string input)
+{
+    var now = context.CurrentUtcDateTime.ToLocalTime();  // Deterministic
+    var utcNow = context.CurrentUtcDateTime;  // Deterministic
+    var timer = await context.CreateTimer(context.CurrentUtcDateTime.AddSeconds(10));
 }
 ```
 
 ### DFA0002: Guid.NewGuid() calls
 **Don't use Guid.NewGuid() in orchestrators**
 
-❌ **Problem:**
+❌ **Problem (Azure Functions):**
 ```csharp
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
 {
@@ -98,9 +150,25 @@ public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurable
 }
 ```
 
-✅ **Solution:**
+❌ **Problem (DTF):**
+```csharp
+public override async Task<string> RunTask(OrchestrationContext context, string input)
+{
+    var id = Guid.NewGuid();  // Non-deterministic!
+}
+```
+
+✅ **Solution (Azure Functions):**
 ```csharp
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+{
+    var id = context.NewGuid();  // Deterministic
+}
+```
+
+✅ **Solution (DTF):**
+```csharp
+public override async Task<string> RunTask(OrchestrationContext context, string input)
 {
     var id = context.NewGuid();  // Deterministic
 }
@@ -131,21 +199,28 @@ public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurable
 ### DFA0004: I/O operations
 **Don't perform I/O operations directly in orchestrators**
 
-❌ **Problem:**
+❌ **Problem (both frameworks):**
+```csharp
+// This applies to both Azure Functions and DTF orchestrators
+var content = File.ReadAllText("file.txt");  // I/O operation!
+var httpResult = await httpClient.GetAsync("https://api.example.com");  // I/O operation!
+```
+
+✅ **Solution (Azure Functions):**
 ```csharp
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
 {
-    var content = File.ReadAllText("file.txt");  // I/O operation!
-    var httpResult = await httpClient.GetAsync("https://api.example.com");  // I/O operation!
+    var content = await context.CallActivityAsync<string>("ReadFileActivity", "file.txt");
+    var httpResult = await context.CallActivityAsync<string>("HttpCallActivity", "https://api.example.com");
 }
 ```
 
-✅ **Solution:**
+✅ **Solution (DTF):**
 ```csharp
-public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+public override async Task<string> RunTask(OrchestrationContext context, string input)
 {
-    var content = await context.CallActivityAsync<string>("ReadFileActivity", "file.txt");  // Use activity
-    var httpResult = await context.CallActivityAsync<string>("HttpCallActivity", "https://api.example.com");  // Use activity
+    var content = await context.ScheduleTask<string>(typeof(ReadFileActivity), "file.txt");
+    var httpResult = await context.ScheduleTask<string>(typeof(HttpCallActivity), "https://api.example.com");
 }
 ```
 
@@ -486,6 +561,26 @@ public static async Task<string> ReadFileActivity([ActivityTrigger] string fileP
     return await File.ReadAllTextAsync(filePath); // Activities can perform I/O
 }
 ```
+
+## Sample Projects
+
+The repository includes comprehensive sample projects demonstrating both supported frameworks:
+
+### 🔵 **Azure Durable Functions Sample** (`samples/DurableFunctionsSample/`)
+- Complete Azure Functions project with Durable Functions
+- Examples of problematic patterns and their corrections
+- HTTP triggers for testing orchestrations
+- Activity functions demonstrating proper I/O handling
+- **40+ analyzer violations** to learn from
+
+### 🟢 **Durable Task Framework Sample** (`samples/DurableTaskSample/`)
+- Pure DTF implementation without Azure Functions
+- `TaskOrchestration<TResult, TInput>` class examples
+- Direct DTF orchestration and activity patterns
+- Console application demonstrating orchestration startup
+- **6+ analyzer violations** demonstrating core DTF patterns
+
+Both samples are designed to show violations on purpose - they're educational tools for understanding what the analyzer catches and how to fix determinism issues.
 
 ## Additional Resources
 
