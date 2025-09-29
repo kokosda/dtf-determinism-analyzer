@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consideration for custom rule configuration options
 - Future integration with additional Durable Task Framework patterns
 
-## [1.0.0] - 2025-09-18
+## [1.0.0] - 2025-09-29
 
 ### Added
 
