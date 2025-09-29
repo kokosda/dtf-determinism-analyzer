@@ -143,18 +143,16 @@ namespace DtfDeterminismAnalyzer
         /// DFA0009: Avoid .NET threading APIs like ConfigureAwait(false) in orchestrators.
         /// Threading APIs can interfere with the orchestrator's execution context and replay model.
         /// </summary>
-#pragma warning disable RS1032 // Define diagnostic message correctly - Tests expect period in message
         public static readonly DiagnosticDescriptor ThreadingApisRule = new(
             id: "DFA0009",
             title: "Avoid .NET threading APIs like ConfigureAwait(false)",
-            messageFormat: "Threading API usage detected.",
+            messageFormat: "Threading API usage detected",
             category: Category,
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
             description: "Threading APIs like ConfigureAwait(false), custom TaskSchedulers, and synchronization primitives " +
                         "can interfere with the orchestrator's execution context and replay model. Let orchestrator code run on its natural context.",
             helpLinkUri: $"{HelpBaseUri}#threading-apis");
-#pragma warning restore RS1032
 
         /// <summary>
         /// DFA0010: Do not use bindings inside orchestrators.

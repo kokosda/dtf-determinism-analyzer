@@ -27,7 +27,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
             var result = await RunAnalyzerTest(testCode);
             Assert.That(result.AnalyzerDiagnostics.Count, Is.EqualTo(1), "Expected exactly one diagnostic");
             Assert.That(result.AnalyzerDiagnostics[0].Id, Is.EqualTo("DFA0009"), "Expected DFA0009 diagnostic");
-            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected."), "Expected correct diagnostic message");
+            Assert.That(result.AnalyzerDiagnostics[0].GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected"), "Expected correct diagnostic message");
         }
 
         private async Task VerifyNoDiagnostics(string testCode)
@@ -43,7 +43,7 @@ using Microsoft.Azure.WebJobs.Extensions.DurableTask;
             foreach (var diagnostic in result.AnalyzerDiagnostics)
             {
                 Assert.That(diagnostic.Id, Is.EqualTo("DFA0009"), "Expected DFA0009 diagnostic");
-                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected."), "Expected correct diagnostic message");
+                Assert.That(diagnostic.GetMessage(System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo("Threading API usage detected"), "Expected correct diagnostic message");
             }
         }
 

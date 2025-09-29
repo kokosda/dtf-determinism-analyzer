@@ -189,9 +189,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             string whenAllArgs = whenAllInvocation.ArgumentList?.ToString() ?? "";
             
             // If arguments are simple identifiers (like task1, task2), rely on method context  
-#pragma warning disable CA2249 // Use 'string.Contains' instead of 'string.IndexOf'
-            if (whenAllArgs.IndexOf('(') == -1 && hasDurableCalls && !hasNonDurableCalls)
-#pragma warning restore CA2249
+            if (!whenAllArgs.Contains('(') && hasDurableCalls && !hasNonDurableCalls)
             {
                 return true; // Variables likely hold durable tasks
             }
