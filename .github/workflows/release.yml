@@ -144,7 +144,7 @@ jobs:
         prerelease: ${{ github.event.inputs.prerelease }}
     
     - name: Upload release artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: release-package-${{ needs.validate-release.outputs.version }}
         path: ./release-artifacts/*.nupkg

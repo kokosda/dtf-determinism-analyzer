@@ -40,7 +40,7 @@ jobs:
       run: dotnet test --configuration Release --no-build --verbosity normal --logger trx --results-directory TestResults
     
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.dotnet-version }}
