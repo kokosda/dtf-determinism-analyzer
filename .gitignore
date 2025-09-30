@@ -370,8 +370,8 @@ FodyWeavers.xsd
 .AppleDouble
 .LSOverride
 
-# Icon must end with two \r
-Icon
+# Icon must end with two \r (macOS special icon files)
+Icon?
 
 # Thumbnails
 ._*

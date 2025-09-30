@@ -85,7 +85,7 @@
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <!-- Package icon -->
-    <None Include="..\..\icon\icon.png" Pack="true" PackagePath="icon.png" />
+    <None Include="..\..\icon\icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <!-- Assembly metadata -->
