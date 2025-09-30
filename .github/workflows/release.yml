@@ -42,13 +42,29 @@ jobs:
         
         TAG="v$VERSION"
         
-        # Check if tag already exists
-        if git tag | grep -q "^$TAG$"; then
-          echo "❌ Tag $TAG already exists"
-          exit 1
+        # Check if tag exists and if so, check if GitHub release exists
+        TAG_EXISTS=$(git tag | grep -c "^$TAG$" || true)
+        
+        if [ "$TAG_EXISTS" -gt 0 ]; then
+          echo "ℹ️ Tag $TAG already exists, checking if GitHub release exists..."
+          
+          # Check if GitHub release exists for this tag
+          RELEASE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/$TAG")
+          
+          if [ "$RELEASE_EXISTS" = "200" ]; then
+            echo "❌ GitHub release for tag $TAG already exists"
+            exit 1
+          else
+            echo "✅ Tag $TAG exists but no GitHub release found - proceeding"
+          fi
+        else
+          echo "✅ Tag $TAG doesn't exist - will be created"
         fi
         
-        echo "✅ Version $VERSION is valid and tag $TAG doesn't exist"
+        echo "✅ Version $VERSION is valid"
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "tag=$TAG" >> $GITHUB_OUTPUT
 
