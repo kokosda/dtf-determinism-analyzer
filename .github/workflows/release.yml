@@ -169,12 +169,10 @@ jobs:
         git push origin "$TAG" || echo "ℹ️ Tag $TAG may already exist on remote"
     
     - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ needs.validate-release.outputs.tag }}
-        release_name: Release ${{ needs.validate-release.outputs.version }}
+        name: Release ${{ needs.validate-release.outputs.version }}
         body_path: ${{ steps.release_notes.outputs.notes_file }}
         draft: false
         prerelease: ${{ github.event.inputs.prerelease }}
