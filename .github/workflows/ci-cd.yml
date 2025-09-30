@@ -108,7 +108,7 @@ jobs:
     name: Publish to NuGet
     runs-on: ubuntu-latest
     needs: pack
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag')
     permissions:
       id-token: write  # Required for OIDC token
       contents: read
@@ -142,7 +142,7 @@ jobs:
     name: Publish to GitHub Packages
     runs-on: ubuntu-latest
     needs: pack
-    if: github.event_name == 'release' && github.event.action == 'published'
+    if: (github.event_name == 'release' && github.event.action == 'published') || (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag')
     permissions:
       contents: read
       packages: write
