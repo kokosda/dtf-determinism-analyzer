@@ -138,15 +138,33 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
-        git commit -m "chore: bump version to ${{ needs.validate-release.outputs.version }}"
+        
+        # Check if there are any changes to the project file
+        if git diff --quiet src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj; then
+          echo "ℹ️ No version changes needed - .csproj already has version ${{ needs.validate-release.outputs.version }}"
+        else
+          echo "✅ Committing version updates to ${{ needs.validate-release.outputs.version }}"
+          git add src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj
+          git commit -m "chore: bump version to ${{ needs.validate-release.outputs.version }}"
+        fi
     
     - name: Create and push tag
       run: |
         TAG="${{ needs.validate-release.outputs.tag }}"
-        git tag "$TAG" -m "Release $TAG"
+        
+        # Check if tag already exists locally
+        if git tag | grep -q "^$TAG$"; then
+          echo "ℹ️ Tag $TAG already exists locally - skipping tag creation"
+        else
+          echo "✅ Creating tag $TAG"
+          git tag "$TAG" -m "Release $TAG"
+        fi
+        
+        # Push any commits (if there were version updates)
         git push origin HEAD:"${{ github.ref_name }}"
-        git push origin "$TAG"
+        
+        # Push tag (will be a no-op if tag already exists on remote)
+        git push origin "$TAG" || echo "ℹ️ Tag $TAG may already exist on remote"
     
     - name: Create GitHub Release
       uses: actions/create-release@v1
