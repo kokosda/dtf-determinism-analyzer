@@ -7,9 +7,7 @@ A production-ready Roslyn analyzer and code fixes package that validates Durable
 [![Build Status](https://img.shields.io/github/actions/workflow/status/kokosda/dtf-determinism-analyzer/ci.yml)](https://github.com/kokosda/dtf-determinism-analyzer/actions)
 [![License](https://img.shields.io/github/license/kokosda/dtf-determinism-analyzer)](LICENSE)
 
-## Quick Start
-
-### 1. Install the Package
+## Installation
 
 Install via NuGet Package Manager:
 
@@ -23,7 +21,9 @@ Or via .NET CLI:
 dotnet add package DtfDeterminismAnalyzer --version 1.0.0
 ```
 
-### 2. Write Your Orchestrator
+## Quick Start
+
+### 1. Write Your Orchestrator
 
 **Azure Durable Functions:**
 ```csharp
@@ -38,7 +38,7 @@ public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurable
 
 **Durable Task Framework:**
 ```csharp
-public class MyOrchestrator : TaskOrchestration<string, string>
+public class MyOrchestration : TaskOrchestration<string, string>
 {
     public override async Task<string> RunTask(OrchestrationContext context, string input)
     {
@@ -49,14 +49,14 @@ public class MyOrchestrator : TaskOrchestration<string, string>
 }
 ```
 
-### 3. Fix Issues Automatically
+### 2. Fix Issues Automatically
 
 When you write problematic code, the analyzer will:
 - 🔍 **Detect** non-deterministic patterns
 - ⚠️ **Report** diagnostics with clear messages
 - 🔧 **Suggest** automatic fixes via code actions
 
-### 4. Configure Rules (Optional)
+### 3. Configure Rules (Optional)
 
 Customize rule severities in `.editorconfig`:
 
@@ -94,7 +94,7 @@ The analyzer supports both major Durable Task implementations:
 
 Both frameworks share the same determinism constraints and replay behavior, making this analyzer valuable for any durable orchestration code.
 
-## Rules Reference
+## Rules
 
 ### DFA0001: DateTime and Stopwatch APIs
 **Don't use DateTime.Now, DateTime.UtcNow, or Stopwatch in orchestrators**
