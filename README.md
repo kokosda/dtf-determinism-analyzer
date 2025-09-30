@@ -608,6 +608,15 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 3. Build the solution: `dotnet build`
 4. Run tests: `dotnet test`
 
+### Project Status
+
+- ✅ **CI/CD Pipeline**: Automated builds and tests across multiple platforms
+- ✅ **Unit Tests**: 170+ comprehensive test cases covering all analyzer rules
+- ⏳ **Code Coverage**: Codecov integration planned for detailed coverage reporting
+- ✅ **Security**: Dependabot and CodeQL scanning enabled
+
+> **Note**: Code coverage reporting via Codecov will be enabled soon. Currently configured as non-blocking to ensure smooth CI/CD operations.
+
 ### Adding New Rules
 
 To add a new determinism rule:
