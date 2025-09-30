@@ -1,4 +1,4 @@
-name: Security and Dependencies
+name: Dependency Security
 
 on:
   schedule:
@@ -8,6 +8,10 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+# NOTE: This workflow focuses on dependency security scanning.
+# Code scanning is handled by GitHub's default CodeQL setup, which provides
+# automatic security analysis without configuration conflicts.
 
 jobs:
   dependency-review:
@@ -24,7 +28,7 @@ jobs:
         fail-on-severity: moderate
 
   security-scan:
-    name: Security Scan
+    name: .NET Security Audit
     runs-on: ubuntu-latest
     
     steps:
@@ -39,49 +43,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     
-    - name: List packages for security audit
+    - name: List vulnerable packages
       run: dotnet list package --vulnerable --include-transitive
     
-    - name: Run security audit
+    - name: List deprecated packages
       run: dotnet list package --deprecated
-
-  codeql-analysis:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp' ]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    # NOTE: This workflow uses advanced CodeQL configuration with custom queries.
-    # If you get "CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled" error:
-    # 1. Go to repository Settings > Code security and analysis > Code scanning
-    # 2. Disable "Default setup" for CodeQL
-    # 3. This workflow provides enhanced security scanning with security-extended and security-and-quality queries
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        queries: security-extended,security-and-quality
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '8.0.x'
-    
-    - name: Build for CodeQL
-      run: |
-        dotnet restore
-        dotnet build --configuration Release --no-restore
-    
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3

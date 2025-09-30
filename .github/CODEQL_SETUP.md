@@ -1,50 +1,50 @@
-# CodeQL Setup Instructions
+# Security Scanning Setup
 
-This repository uses **advanced CodeQL configuration** with enhanced security queries (`security-extended` and `security-and-quality`) for comprehensive security analysis.
+This repository uses a **hybrid security approach** combining GitHub's default CodeQL setup with custom dependency security scanning.
 
-## Resolving CodeQL Configuration Conflicts
+## Current Configuration
 
-If you encounter this error:
-```
-Error: Code Scanning could not process the submitted SARIF file:
-CodeQL analyses from advanced configurations cannot be processed when the default setup is enabled
-```
+### ✅ **Default CodeQL Setup (Automatic)**
+- GitHub automatically scans the code for security vulnerabilities
+- No configuration required - works out of the box
+- Provides comprehensive code analysis for C# projects
+- Runs on pushes and pull requests automatically
 
-### Solution: Disable Default CodeQL Setup
+### ✅ **Custom Dependency Security (Workflow)**
+- `.github/workflows/security.yml` handles dependency security
+- **Dependency Review**: Scans for vulnerable dependencies in PRs
+- **.NET Security Audit**: Lists vulnerable and deprecated packages
+- Runs weekly and on code changes
 
-1. **Navigate to Repository Settings:**
-   - Go to your repository on GitHub
-   - Click **Settings** tab
-   - Select **Code security and analysis** from the sidebar
+## Why This Approach?
 
-2. **Disable Default Setup:**
-   - Find the **Code scanning** section
-   - Under **CodeQL analysis**, click **Set up** → **Advanced**
-   - Or if already enabled, click **Edit** → **Switch to advanced**
-   - This disables the default setup and allows the custom workflow to run
+### **Benefits:**
+- 🔒 **No Configuration Conflicts** - Default CodeQL and custom workflows work together
+- 🚀 **Zero Maintenance** - Default setup updates automatically
+- 🔍 **Comprehensive Coverage** - Code analysis + dependency security
+- ⚡ **Fast Setup** - No manual repository configuration needed
 
-3. **Verify Configuration:**
-   - The custom workflow in `.github/workflows/security.yml` will now run successfully
-   - You'll get enhanced security scanning with additional query suites
+### **Coverage:**
+- **Code Security**: Handled by default CodeQL (SQL injection, XSS, etc.)
+- **Dependency Security**: Handled by custom workflow (vulnerable packages)
+- **Supply Chain Security**: Dependency review on pull requests
 
-## Why Advanced Configuration?
+## Previous Configuration (Deprecated)
 
-Our advanced CodeQL setup provides:
+We previously used an advanced CodeQL configuration but removed it to avoid conflicts with GitHub's default setup. The default setup provides equivalent security coverage with better maintenance.
 
-- ✅ **Security-Extended Queries** - Additional security vulnerability detection
-- ✅ **Security-and-Quality Queries** - Code quality and maintainability checks  
-- ✅ **Custom Build Process** - Optimized for .NET projects
-- ✅ **Enhanced Coverage** - More comprehensive analysis than default setup
+## Troubleshooting
 
-## Alternative: Simplified Setup
+### ✅ **No More "Advanced Configuration" Errors**
+The workflow has been updated to focus only on dependency security, eliminating CodeQL configuration conflicts.
 
-If you prefer to use GitHub's default CodeQL setup instead:
-
-1. **Remove Custom Workflow:** Delete or disable `.github/workflows/security.yml`
-2. **Enable Default Setup:** Go to Settings → Code security and analysis → Enable default CodeQL analysis
-3. **Trade-offs:** You'll lose the enhanced security queries but gain simpler maintenance
+### **Want Enhanced Code Scanning?**
+If you need custom CodeQL queries:
+1. Disable default CodeQL in repository settings
+2. Add a custom CodeQL workflow with advanced configuration
+3. Trade-off: More maintenance but more control
 
 ## Need Help?
 
-- [CodeQL Documentation](https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/about-code-scanning-with-codeql)
-- [Advanced Security Setup](https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning-for-a-repository)
+- [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
+- [Dependency Review](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review)
