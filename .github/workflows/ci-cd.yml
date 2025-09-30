@@ -108,7 +108,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: pack
     if: github.event_name == 'release' && github.event.action == 'published'
-    # Note: Add environment protection in GitHub repo settings if needed
+    permissions:
+      id-token: write  # Required for OIDC token
+      contents: read
+    # Optional: Add environment protection for extra security
+    # Uncomment to use environment secrets instead of repository secrets:
     # environment:
     #   name: production
     #   url: https://www.nuget.org/packages/DtfDeterminismAnalyzer
@@ -125,11 +129,12 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    # To configure NUGET_API_KEY:
-    # 1. Go to GitHub repo -> Settings -> Secrets and variables -> Actions
-    # 2. Add a new repository secret named "NUGET_API_KEY"
-    # 3. Get API key from https://www.nuget.org/account/apikeys
+    # FIRST-TIME SETUP REQUIRED:
+    # 1. For initial package creation: Add NUGET_API_KEY secret and uncomment the API key line below
+    # 2. After first successful publish: Remove the secret and rely on Trusted Publishers
     - name: Publish to NuGet
+      # run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
+      # Uncomment for first-time publish only:
       run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
       
   publish-github:

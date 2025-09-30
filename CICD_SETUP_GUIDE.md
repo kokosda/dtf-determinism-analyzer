@@ -10,22 +10,36 @@
 2. Create an environment named `production`
 3. Uncomment the environment section in ci-cd.yml
 
-### Issue 2: NUGET_API_KEY Secret (Line 127) - SETUP NEEDED ⚠️
-**Problem**: VS Code warns that `NUGET_API_KEY` secret is not configured.
+### Issue 2: NUGET_API_KEY Secret - MIGRATED TO TRUSTED PUBLISHERS ✅
+**Previous Problem**: Required API key secret configuration.
 
-**Solution**: This is just a warning. The workflow will work, but you need to configure the secret before publishing to NuGet.
+**New Solution**: **Migrated to Trusted Publishers** - No API key needed! Uses secure OIDC tokens instead.
 
 ## Required Setup for Full CI/CD Functionality
 
-### 1. NuGet API Key (Required for publishing) 🔑
+### 1. NuGet Trusted Publishers (Recommended - More Secure) 🔐
+**Modern approach using OIDC tokens instead of API keys:**
 ```bash
-# Steps to configure:
+# Steps to configure Trusted Publishers:
+# 1. Go to https://www.nuget.org/packages/DtfDeterminismAnalyzer/manage
+# 2. Navigate to "Trusted Publishers" tab
+# 3. Add new trusted publisher:
+#    Owner: kokosda
+#    Repository: dtf-determinism-analyzer
+#    Workflow: .github/workflows/ci-cd.yml
+#    Environment: (leave empty or set to 'production')
+# 4. No GitHub secrets needed - authentication is automatic!
+```
+
+### 1b. Alternative: NuGet API Key (Legacy approach) 🔑
+**Only use if Trusted Publishers doesn't work for your setup:**
+```bash
+# Steps to configure (NOT RECOMMENDED - use Trusted Publishers instead):
 # 1. Go to https://www.nuget.org/account/apikeys
-# 2. Create a new API key with "Push new packages and package versions" scope
+# 2. Create API key with "Push new packages and package versions" scope
 # 3. Go to GitHub repo → Settings → Secrets and variables → Actions
-# 4. Add new repository secret:
-#    Name: NUGET_API_KEY
-#    Value: [your-api-key-from-nuget]
+# 4. Add repository secret: NUGET_API_KEY
+# 5. Update workflow to use --api-key ${{ secrets.NUGET_API_KEY }}
 ```
 
 ### 2. Environment Protection (Optional) 🛡️
@@ -52,10 +66,12 @@ The workflow includes code coverage upload to Codecov. If you want coverage repo
 - NuGet Package Creation
 - GitHub Packages Publishing
 
-⚠️ **Requires Setup**:
-- NuGet.org Publishing (needs NUGET_API_KEY secret)
-- Environment Protection (optional)
-- Codecov Integration (optional)
+✅ **Configured with Modern Security**:
+- NuGet.org Publishing (uses Trusted Publishers - no secrets needed)
+
+⚠️ **Optional Setup**:
+- Environment Protection (for extra release approval gates)
+- Codecov Integration (for detailed code coverage reports)
 
 ## Testing Your Setup
 
@@ -75,13 +91,9 @@ dotnet pack src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj --configura
 
 ## VS Code Warning Resolution
 
-The remaining VS Code warning about `NUGET_API_KEY` is **expected and safe**:
-- It's just alerting you that the secret isn't configured yet
-- The workflow will still run successfully (it only runs on releases)
-- You can ignore this warning until you're ready to publish to NuGet.org
+## Summary
 
-## Next Steps
-
-1. **Immediate**: Your CI/CD fix is complete and working ✅
-2. **Before first release**: Configure NUGET_API_KEY secret
-3. **Optional**: Set up environment protection and Codecov integration
+1. **✅ Ready to Use**: All CI/CD functionality configured with modern security
+2. **🔐 Secure by Default**: Uses Trusted Publishers (OIDC tokens) instead of API keys
+3. **📦 Ready for Release**: Configure Trusted Publisher on NuGet.org and you're ready to publish
+4. **🛡️ Optional Security**: Add environment protection for manual release approval gates
