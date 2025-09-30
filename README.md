@@ -4,7 +4,7 @@ A production-ready Roslyn analyzer and code fixes package that validates Durable
 
 [![NuGet Version](https://img.shields.io/nuget/v/DtfDeterminismAnalyzer)](https://www.nuget.org/packages/DtfDeterminismAnalyzer)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/DtfDeterminismAnalyzer)](https://www.nuget.org/packages/DtfDeterminismAnalyzer)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/kokosda/dtf-determinism-analyzer/ci.yml)](https://github.com/kokosda/dtf-determinism-analyzer/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/kokosda/dtf-determinism-analyzer/ci-cd.yml)](https://github.com/kokosda/dtf-determinism-analyzer/actions)
 [![License](https://img.shields.io/github/license/kokosda/dtf-determinism-analyzer)](LICENSE)
 
 ## Installation
