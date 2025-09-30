@@ -183,3 +183,9 @@ jobs:
         name: release-package-${{ needs.validate-release.outputs.version }}
         path: ./release-artifacts/*.nupkg
         retention-days: 90
+    
+    - name: Trigger CI/CD workflow for publishing
+      run: |
+        echo "✅ Release created successfully"
+        echo "ℹ️ Note: If CI/CD publishing doesn't trigger automatically, manually run the CI/CD workflow"
+        echo "🚀 The release is now available and ready for publishing"
