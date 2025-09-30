@@ -74,6 +74,8 @@ jobs:
     needs: validate-release
     environment:
       name: release
+    permissions:
+      contents: write  # Required to push commits and tags
     
     steps:
     - name: Checkout code
