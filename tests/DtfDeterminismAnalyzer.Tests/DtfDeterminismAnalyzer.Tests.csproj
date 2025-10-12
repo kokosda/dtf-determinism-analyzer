@@ -52,6 +52,7 @@
     <PackageReference Include="Microsoft.Azure.Functions.Extensions" />
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" />
     <PackageReference Include="DurableTask.Core" />
+    <PackageReference Include="Microsoft.DurableTask.Abstractions" />
   </ItemGroup>
 
   <!-- JSON libraries for test data -->

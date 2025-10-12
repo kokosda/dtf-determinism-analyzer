@@ -61,7 +61,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for File I/O operations
             if (IsFileIoOperation(containingType, memberSymbol.Name))
             {
-                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = memberAccess.FirstAncestorOrSelf<MethodDeclarationSyntax>();
                 if (orchestratorMethod != null)
                 {
                     (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
@@ -79,7 +79,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for HTTP client operations
             if (IsHttpClientOperation(containingType, memberSymbol.Name))
             {
-                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = memberAccess.FirstAncestorOrSelf<MethodDeclarationSyntax>();
                 if (orchestratorMethod != null)
                 {
                     (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
@@ -97,7 +97,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for Directory operations
             if (IsDirectoryOperation(containingType, memberSymbol.Name))
             {
-                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(memberAccess);
+                MethodDeclarationSyntax? orchestratorMethod = memberAccess.FirstAncestorOrSelf<MethodDeclarationSyntax>();
                 if (orchestratorMethod != null)
                 {
                     (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, memberSymbol);
@@ -141,7 +141,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 IsNetworkOperation(containingType, methodSymbol.Name) ||
                 IsConsoleOperation(containingType, methodSymbol.Name))
             {
-                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(invocation);
+                MethodDeclarationSyntax? orchestratorMethod = invocation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
                 if (orchestratorMethod != null)
                 {
                     (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, (ISymbol)methodSymbol);
@@ -178,7 +178,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Check for I/O related object creations
             if (containingNamespace != null && IsIoRelatedType(typeName, containingNamespace))
             {
-                MethodDeclarationSyntax? orchestratorMethod = GetContainingOrchestratorMethod(objectCreation);
+                MethodDeclarationSyntax? orchestratorMethod = objectCreation.FirstAncestorOrSelf<MethodDeclarationSyntax>();
                 if (orchestratorMethod != null)
                 {
                     (MethodDeclarationSyntax, ISymbol) key = (orchestratorMethod, (ISymbol)typeInfo.Type);
@@ -203,6 +203,9 @@ namespace DtfDeterminismAnalyzer.Analyzers
             {
                 return memberName is "ReadAllText" or "ReadAllLines" or "ReadAllBytes" or
                        "WriteAllText" or "WriteAllLines" or "WriteAllBytes" or
+                       "ReadAllTextAsync" or "ReadAllLinesAsync" or "ReadAllBytesAsync" or
+                       "WriteAllTextAsync" or "WriteAllLinesAsync" or "WriteAllBytesAsync" or
+                       "AppendAllTextAsync" or "AppendAllLinesAsync" or
                        "OpenRead" or "OpenWrite" or "Create" or "Open" or
                        "Copy" or "Move" or "Delete" or "Exists" or
                        "ReadLines" or "AppendAllText" or "AppendAllLines";

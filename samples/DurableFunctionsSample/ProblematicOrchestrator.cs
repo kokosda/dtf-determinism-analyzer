@@ -67,6 +67,9 @@ public class ProblematicOrchestrator
 
         // ❌ DFA0004: Direct I/O operation in orchestrator  
         string fileContent = File.ReadAllText("config.txt");
+        
+        // ❌ DFA0004: File I/O operations in orchestrator (async version)
+        string fileContentAsync = await File.ReadAllTextAsync("config.txt");
 
         // ❌ DFA0005: Environment variable access
         string? envVar = Environment.GetEnvironmentVariable("TEMP");

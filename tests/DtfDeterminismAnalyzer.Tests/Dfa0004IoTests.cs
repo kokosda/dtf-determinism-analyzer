@@ -109,7 +109,43 @@ public class TestOrchestrator
     }
 }";
 
-            await VerifyDFA0004Diagnostic(testCode);        }
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithFileReadAllTextAsyncInOrchestrator_ReportsDFA0004()
+        {
+            string testCode = OrchestrationTriggerUsing + @"
+public class TestOrchestrator
+{
+    [FunctionName(""TestOrchestrator"")]
+    public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+    {
+        var content = await File.ReadAllTextAsync(""config.txt"");
+        await context.CallActivityAsync(""ProcessContent"", content);
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithFileWriteAllTextAsyncInOrchestrator_ReportsDFA0004()
+        {
+            string testCode = OrchestrationTriggerUsing + @"
+public class TestOrchestrator
+{
+    [FunctionName(""TestOrchestrator"")]
+    public async Task RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+    {
+        var data = context.GetInput<string>();
+        await File.WriteAllTextAsync(""output.txt"", data);
+        await context.CallActivityAsync(""NotifyCompletion"", ""done"");
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
 
         [Test]
         public async Task RunAnalyzer_WithHttpClientGetAsyncInOrchestrator_ReportsDFA0004()

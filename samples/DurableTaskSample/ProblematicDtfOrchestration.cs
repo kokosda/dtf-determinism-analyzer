@@ -41,8 +41,11 @@ public class ProblematicDtfOrchestration
         var random = new Random();
         int randomValue = random.Next(1, 100);
 
-        // ❌ DFA0004: File I/O operations in orchestrator
-        string fileContent = await File.ReadAllTextAsync("config.txt");
+        // ❌ DFA0004: Direct I/O operation in orchestrator  
+        string fileContent = File.ReadAllText("config.txt");
+
+        // ❌ DFA0004: File I/O operations in orchestrator (async version)
+        string fileContentAsync = await File.ReadAllTextAsync("config.txt");
 
         // ❌ DFA0005: Environment variable access in orchestrator
         string? envVar = Environment.GetEnvironmentVariable("TEMP");
