@@ -1,9 +1,8 @@
+using System.Net;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.DurableTask.Client;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Text.Json;
 
 namespace DurableFunctionsSample;
 
@@ -32,7 +31,7 @@ public class HttpTriggers
         string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
             nameof(ProblematicOrchestrator.RunProblematicOrchestrator));
 
-        var response = req.CreateResponse(HttpStatusCode.OK);
+        HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(new
         {
             instanceId,
@@ -56,7 +55,7 @@ public class HttpTriggers
         string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
             nameof(CorrectedOrchestrator.RunCorrectedOrchestrator));
 
-        var response = req.CreateResponse(HttpStatusCode.OK);
+        HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(new
         {
             instanceId,
@@ -85,10 +84,10 @@ public class HttpTriggers
         };
 
         string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
-            nameof(ComplexOrchestrator.RunComplexOrchestrator), 
+            nameof(ComplexOrchestrator.RunComplexOrchestrator),
             input);
 
-        var response = req.CreateResponse(HttpStatusCode.OK);
+        HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteAsJsonAsync(new
         {
             instanceId,

@@ -26,18 +26,18 @@ public class CorrectedOrchestrator
     public async Task<string> RunCorrectedOrchestrator([OrchestrationTrigger] TaskOrchestrationContext context)
     {
         // ✅ Use context.CurrentUtcDateTime instead of DateTime.Now/UtcNow
-        var startTime = context.CurrentUtcDateTime.ToLocalTime();
-        var utcTime = context.CurrentUtcDateTime;
-        
+        DateTime startTime = context.CurrentUtcDateTime.ToLocalTime();
+        DateTime utcTime = context.CurrentUtcDateTime;
+
         // ✅ Use context.NewGuid() instead of Guid.NewGuid()
-        var correlationId = context.NewGuid();
-        
+        Guid correlationId = context.NewGuid();
+
         // ✅ Use durable timer instead of Thread.Sleep
         await context.CreateTimer(context.CurrentUtcDateTime.AddSeconds(1), CancellationToken.None);
-        
+
         // Activities can perform any operations - no restrictions
-        var result = await context.CallActivityAsync<string>(
-            nameof(Activities.ProcessDataActivity), 
+        string result = await context.CallActivityAsync<string>(
+            nameof(Activities.ProcessDataActivity),
             new { startTime, utcTime, correlationId });
 
         return result;
@@ -50,24 +50,24 @@ public class CorrectedOrchestrator
     public async Task<string> RunCorrectedComplexPatterns([OrchestrationTrigger] TaskOrchestrationContext context)
     {
         // ✅ Use deterministic seed for Random based on orchestration context
-        var seed = context.CurrentUtcDateTime.GetHashCode() ^ context.InstanceId.GetHashCode();
+        int seed = context.CurrentUtcDateTime.GetHashCode() ^ context.InstanceId.GetHashCode();
         var random = new Random(seed);
-        var randomValue = random.Next(1, 100);
-        
+        int randomValue = random.Next(1, 100);
+
         // ✅ Use durable timer instead of Task.Delay
         await context.CreateTimer(context.CurrentUtcDateTime.AddSeconds(2), CancellationToken.None);
-        
+
         // ✅ Move I/O operations to activities
-        var fileContent = await context.CallActivityAsync<string>(
-            nameof(Activities.ReadConfigFileActivity), 
+        string fileContent = await context.CallActivityAsync<string>(
+            nameof(Activities.ReadConfigFileActivity),
             "config.txt");
-        
+
         // ✅ Move environment variable access to activities
-        var envVar = await context.CallActivityAsync<string>(
-            nameof(Activities.GetEnvironmentVariableActivity), 
+        string envVar = await context.CallActivityAsync<string>(
+            nameof(Activities.GetEnvironmentVariableActivity),
             "TEMP");
-        
-        var result = await context.CallActivityAsync<string>(
+
+        string result = await context.CallActivityAsync<string>(
             nameof(Activities.ProcessRandomDataActivity),
             new { randomValue, envVar, fileContent });
 
@@ -87,10 +87,10 @@ public class CorrectedOrchestrator
         try
         {
             // Activity calls with retry policy - this is deterministic
-            var result = await context.CallActivityAsync<string>(
+            string result = await context.CallActivityAsync<string>(
                 nameof(Activities.RiskyOperationActivity),
                 options: retryOptions);
-            
+
             return result;
         }
         catch (TaskFailedException)

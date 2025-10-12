@@ -1,7 +1,7 @@
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace DurableFunctionsSample;
 
@@ -46,10 +46,10 @@ public class ComplexOrchestrator
     public async Task<ProcessingResult> RunComplexOrchestrator(
         [OrchestrationTrigger] TaskOrchestrationContext context)
     {
-        var input = context.GetInput<ComplexInput>()!;
-        var startTime = context.CurrentUtcDateTime;
+        ComplexInput input = context.GetInput<ComplexInput>()!;
+        DateTime startTime = context.CurrentUtcDateTime;
         var steps = new List<string>();
-        
+
         var result = new ProcessingResult
         {
             UserId = input.UserId,
@@ -62,8 +62,8 @@ public class ComplexOrchestrator
         {
             // Step 1: Validate input
             steps.Add("Validating input");
-            var isValid = await context.CallActivityAsync<bool>(
-                nameof(Activities.ValidateUserActivity), 
+            bool isValid = await context.CallActivityAsync<bool>(
+                nameof(Activities.ValidateUserActivity),
                 input.UserId);
 
             if (!isValid)
@@ -74,25 +74,25 @@ public class ComplexOrchestrator
 
             // Step 2: Run parallel activities based on processing type
             steps.Add("Starting parallel processing");
-            
+
             var tasks = new List<Task<string>>();
-            
+
             if (input.ProcessingType == "standard" || input.ProcessingType == "premium")
             {
                 tasks.Add(context.CallActivityAsync<string>(
-                    nameof(Activities.ProcessStandardDataActivity), 
+                    nameof(Activities.ProcessStandardDataActivity),
                     input.UserId));
             }
-            
+
             if (input.ProcessingType == "premium")
             {
                 tasks.Add(context.CallActivityAsync<string>(
-                    nameof(Activities.ProcessPremiumDataActivity), 
+                    nameof(Activities.ProcessPremiumDataActivity),
                     input.UserId));
             }
 
             // Wait for all parallel tasks
-            var results = await Task.WhenAll(tasks);
+            string[] results = await Task.WhenAll(tasks);
             steps.Add($"Completed {results.Length} parallel operations");
 
             // Step 3: Conditional delay based on processing type
@@ -107,7 +107,7 @@ public class ComplexOrchestrator
             if (results.Any())
             {
                 steps.Add("Starting sub-orchestrator");
-                var subResult = await context.CallSubOrchestratorAsync<string>(
+                string subResult = await context.CallSubOrchestratorAsync<string>(
                     nameof(RunDataAggregationSubOrchestrator),
                     new { userId = input.UserId, data = results });
                 steps.Add($"Sub-orchestrator completed: {subResult}");
@@ -118,7 +118,7 @@ public class ComplexOrchestrator
                 maxNumberOfAttempts: input.RetryCount,
                 firstRetryInterval: TimeSpan.FromSeconds(2)));
 
-            var finalResult = await context.CallActivityAsync<string>(
+            string finalResult = await context.CallActivityAsync<string>(
                 nameof(Activities.FinalizeProcessingActivity),
                 input.UserId,
                 options: retryOptions);
@@ -131,10 +131,10 @@ public class ComplexOrchestrator
             steps.Add($"Error: {ex.Message}");
             result.Status = "Failed";
         }
-        
+
         result.TotalDuration = context.CurrentUtcDateTime - startTime;
         result.Steps = steps;
-        
+
         return result;
     }
 
@@ -146,23 +146,23 @@ public class ComplexOrchestrator
     public async Task<string> RunDataAggregationSubOrchestrator(
         [OrchestrationTrigger] TaskOrchestrationContext context)
     {
-        var input = context.GetInput<dynamic>()!;
-        
+        dynamic input = context.GetInput<dynamic>()!;
+
         // Process each data item
         var aggregatedData = new List<string>();
-        
-        foreach (var dataItem in (IEnumerable<string>)input.data)
+
+        foreach (string dataItem in (IEnumerable<string>)input.data)
         {
-            var processed = await context.CallActivityAsync<string>(
+            string processed = await context.CallActivityAsync<string>(
                 nameof(Activities.AggregateDataActivity),
-                new { userId = input.userId, data = dataItem });
-            
+                new { input.userId, data = dataItem });
+
             aggregatedData.Add(processed);
-            
+
             // Small delay between processing items to avoid overwhelming downstream systems
             await context.CreateTimer(context.CurrentUtcDateTime.AddMilliseconds(100), CancellationToken.None);
         }
-        
+
         // Return aggregated result
         return JsonSerializer.Serialize(aggregatedData);
     }
@@ -174,17 +174,17 @@ public class ComplexOrchestrator
     public async Task<List<string>> RunFanOutFanInExample(
         [OrchestrationTrigger] TaskOrchestrationContext context)
     {
-        var input = context.GetInput<string[]>() ?? Array.Empty<string>();
-        
+        string[] input = context.GetInput<string[]>() ?? Array.Empty<string>();
+
         // Fan-out: Start multiple activities in parallel
-        var tasks = input.Select(item =>
+        Task<string>[] tasks = input.Select(item =>
             context.CallActivityAsync<string>(
-                nameof(Activities.ProcessItemActivity), 
+                nameof(Activities.ProcessItemActivity),
                 item)).ToArray();
 
         // Fan-in: Wait for all to complete
-        var results = await Task.WhenAll(tasks);
-        
+        string[] results = await Task.WhenAll(tasks);
+
         return results.ToList();
     }
 }

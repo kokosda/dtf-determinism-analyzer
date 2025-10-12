@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
 
 namespace DurableFunctionsSample;
 
@@ -21,15 +21,15 @@ public class Activities
     }
 
     // Basic data processing activities
-    
+
     [Function(nameof(ProcessDataActivity))]
     public string ProcessDataActivity([ActivityTrigger] dynamic input)
     {
         // Activities can safely use current time, GUIDs, I/O, etc.
-        var processedAt = DateTime.Now;
+        DateTime processedAt = DateTime.Now;
         var processingId = Guid.NewGuid();
-        
-        _logger.LogInformation("Processing data at {ProcessedAt} with ID {ProcessingId}", 
+
+        _logger.LogInformation("Processing data at {ProcessedAt} with ID {ProcessingId}",
             processedAt, processingId);
 
         return JsonSerializer.Serialize(new
@@ -45,9 +45,9 @@ public class Activities
     public string ProcessRandomDataActivity([ActivityTrigger] dynamic input)
     {
         // Activities can perform any operations including I/O
-        var timestamp = DateTime.UtcNow;
-        var fileData = "Simulated file content"; // In reality: File.ReadAllText(...)
-        
+        DateTime timestamp = DateTime.UtcNow;
+        string fileData = "Simulated file content"; // In reality: File.ReadAllText(...)
+
         return JsonSerializer.Serialize(new
         {
             input,
@@ -63,10 +63,10 @@ public class Activities
     public async Task<string> ReadConfigFileActivity([ActivityTrigger] string fileName)
     {
         _logger.LogInformation("Reading config file: {FileName}", fileName);
-        
+
         // In a real implementation, this would read from actual file system
         // return await File.ReadAllTextAsync(fileName);
-        
+
         // Simulated config content
         return JsonSerializer.Serialize(new
         {
@@ -80,10 +80,10 @@ public class Activities
     public string GetEnvironmentVariableActivity([ActivityTrigger] string variableName)
     {
         _logger.LogInformation("Getting environment variable: {VariableName}", variableName);
-        
+
         // Activities can safely access environment variables
-        var value = Environment.GetEnvironmentVariable(variableName) ?? "Not found";
-        
+        string value = Environment.GetEnvironmentVariable(variableName) ?? "Not found";
+
         return JsonSerializer.Serialize(new
         {
             variableName,
@@ -96,17 +96,17 @@ public class Activities
     public async Task<string> RiskyOperationActivity([ActivityTrigger] string input)
     {
         _logger.LogInformation("Performing risky operation with input: {Input}", input);
-        
+
         // Simulate an operation that might fail
         var random = new Random();
         if (random.NextDouble() < 0.3) // 30% chance of failure
         {
             throw new InvalidOperationException("Simulated failure in risky operation");
         }
-        
+
         // Simulate some async work
         await Task.Delay(1000);
-        
+
         return $"Risky operation completed successfully for: {input}";
     }
 
@@ -116,10 +116,10 @@ public class Activities
     public async Task<bool> ValidateUserActivity([ActivityTrigger] string userId)
     {
         _logger.LogInformation("Validating user: {UserId}", userId);
-        
+
         // Simulate user validation (could involve database call, API call, etc.)
         await Task.Delay(500);
-        
+
         // Simple validation: reject empty or obviously invalid IDs
         return !string.IsNullOrWhiteSpace(userId) && userId != "invalid";
     }
@@ -128,10 +128,10 @@ public class Activities
     public async Task<string> ProcessStandardDataActivity([ActivityTrigger] string userId)
     {
         _logger.LogInformation("Processing standard data for user: {UserId}", userId);
-        
+
         // Simulate standard processing
         await Task.Delay(1000);
-        
+
         return $"Standard processing completed for {userId} at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
     }
 
@@ -139,24 +139,24 @@ public class Activities
     public async Task<string> ProcessPremiumDataActivity([ActivityTrigger] string userId)
     {
         _logger.LogInformation("Processing premium data for user: {UserId}", userId);
-        
+
         // Simulate more intensive premium processing
         await Task.Delay(2000);
-        
+
         // Premium processing might involve external API calls
-        var apiResult = await SimulateApiCall($"https://api.example.com/premium/{userId}");
-        
+        string apiResult = await SimulateApiCall($"https://api.example.com/premium/{userId}");
+
         return $"Premium processing completed for {userId}. API result: {apiResult}";
     }
 
     [Function(nameof(AggregateDataActivity))]
     public string AggregateDataActivity([ActivityTrigger] dynamic input)
     {
-        var userId = (string)input.userId;
-        var data = (string)input.data;
-        
+        string userId = (string)input.userId;
+        string data = (string)input.data;
+
         _logger.LogInformation("Aggregating data for user {UserId}: {Data}", userId, data);
-        
+
         // Simulate data aggregation
         var aggregated = new
         {
@@ -166,7 +166,7 @@ public class Activities
             hash = data.GetHashCode(),
             length = data.Length
         };
-        
+
         return JsonSerializer.Serialize(aggregated);
     }
 
@@ -174,17 +174,17 @@ public class Activities
     public async Task<string> FinalizeProcessingActivity([ActivityTrigger] string userId)
     {
         _logger.LogInformation("Finalizing processing for user: {UserId}", userId);
-        
+
         // Simulate finalization steps (database updates, notifications, etc.)
         await Task.Delay(800);
-        
+
         // Simulate possible failure for retry demonstration
         var random = new Random();
         if (random.NextDouble() < 0.2) // 20% chance of failure
         {
             throw new InvalidOperationException("Finalization failed - will retry");
         }
-        
+
         return $"Processing finalized for {userId} at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
     }
 
@@ -192,12 +192,12 @@ public class Activities
     public async Task<string> ProcessItemActivity([ActivityTrigger] string item)
     {
         _logger.LogInformation("Processing item: {Item}", item);
-        
+
         // Simulate variable processing time
         var random = new Random();
-        var delay = random.Next(500, 2000);
+        int delay = random.Next(500, 2000);
         await Task.Delay(delay);
-        
+
         return $"Processed: {item} (took {delay}ms)";
     }
 
@@ -209,7 +209,7 @@ public class Activities
         {
             // In a real scenario, you'd make an actual HTTP call
             // var response = await _httpClient.GetStringAsync(url);
-            
+
             // Simulate API response
             await Task.Delay(300);
             return JsonSerializer.Serialize(new
