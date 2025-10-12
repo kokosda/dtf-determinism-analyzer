@@ -60,7 +60,7 @@ public class Activities
     // I/O activities (what orchestrators should delegate to)
 
     [Function(nameof(ReadConfigFileActivity))]
-    public async Task<string> ReadConfigFileActivity([ActivityTrigger] string fileName)
+    public Task<string> ReadConfigFileActivity([ActivityTrigger] string fileName)
     {
         _logger.LogInformation("Reading config file: {FileName}", fileName);
 

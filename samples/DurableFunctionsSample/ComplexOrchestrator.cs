@@ -104,7 +104,7 @@ public class ComplexOrchestrator
             }
 
             // Step 4: Call sub-orchestrator for complex processing
-            if (results.Any())
+            if (results.Length != 0)
             {
                 steps.Add("Starting sub-orchestrator");
                 string subResult = await context.CallSubOrchestratorAsync<string>(

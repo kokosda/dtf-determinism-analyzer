@@ -17,7 +17,7 @@ namespace DurableTaskSample;
 /// </summary>
 public class Program
 {
-    public static async Task Main(string[] args)
+    public static Task Main(string[] args)
     {
         Console.WriteLine("🔧 DTF Determinism Analyzer - Core Durable Task Framework Sample");
         Console.WriteLine("================================================================");
@@ -42,6 +42,7 @@ public class Program
         
         Console.WriteLine("Press any key to exit...");
         Console.ReadKey(true);
+        return Task.CompletedTask;
     }
 
     private static void DemonstrateOrchestratorPatterns()

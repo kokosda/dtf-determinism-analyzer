@@ -98,7 +98,7 @@ public static class Activities
     /// <summary>
     /// Manages state safely in activity with proper concurrency control.
     /// </summary>
-    private static int _counter = 0;
+    private static int _counter;
     private static readonly object _counterLock = new object();
 
     [Function(nameof(IncrementCounterActivity))]

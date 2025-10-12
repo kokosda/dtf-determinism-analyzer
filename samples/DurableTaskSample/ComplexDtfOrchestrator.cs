@@ -11,7 +11,7 @@ public class ComplexDtfOrchestrator
     /// <summary>
     /// Complex orchestration with multiple deterministic patterns.
     /// </summary>
-    public async Task<ComplexResult> RunComplexOrchestrationAsync(TaskOrchestrationContext context, ComplexInput input)
+    public static async Task<ComplexResult> RunComplexOrchestrationAsync(TaskOrchestrationContext context, ComplexInput input)
     {
         DateTime startTime = context.CurrentUtcDateTime;
 

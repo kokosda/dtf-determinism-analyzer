@@ -13,7 +13,7 @@ namespace DurableTaskSample;
 public class ProblematicDtfOrchestration
 {
     // ❌ DFA0006: Static mutable state access
-    private static int _staticCounter = 0;
+    private static int _staticCounter;
     private static readonly object _lockObject = new object();
 
     /// <summary>
