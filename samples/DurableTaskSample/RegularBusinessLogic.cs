@@ -9,7 +9,7 @@ public class RegularBusinessLogic
     /// <summary>
     /// Regular method - not an orchestrator, so analyzer should ignore violations.
     /// </summary>
-    public async Task<string> ProcessBusinessLogic(string input)
+    public static async Task<string> ProcessBusinessLogic(string input)
     {
         // These operations are fine in regular methods (not orchestrators):
         DateTime now = DateTime.Now;

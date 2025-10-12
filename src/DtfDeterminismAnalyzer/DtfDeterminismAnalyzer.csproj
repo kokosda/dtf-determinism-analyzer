@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <!-- Multi-targeting for broad compatibility -->
-    <TargetFrameworks>net8.0;netstandard2.0</TargetFrameworks>
+    <!-- Target netstandard2.0 for analyzer compatibility -->
+    <TargetFramework>netstandard2.0</TargetFramework>
     
     <!-- Language and nullable reference types -->
     <LangVersion>latest</LangVersion>
@@ -69,16 +69,16 @@
     <ProjectReference Include="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <!-- Include analyzer in package -->
+  <!-- Include analyzer in package - use correct output path -->
   <ItemGroup>
-    <None Include="$(OutputPath)netstandard2.0\$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs\$(AssemblyName).dll" Visible="false" />
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs\$(AssemblyName).dll" Visible="false" />
     <None Include="tools\install.ps1" Pack="true" PackagePath="tools\install.ps1" />
     <None Include="tools\uninstall.ps1" Pack="true" PackagePath="tools\uninstall.ps1" />
   </ItemGroup>
 
   <!-- Include code fixes from referenced project -->
   <ItemGroup>
-    <None Include="..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\netstandard2.0\DtfDeterminismAnalyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs\DtfDeterminismAnalyzer.CodeFixes.dll" Visible="false" />
+    <None Include="../DtfDeterminismAnalyzer.CodeFixes/bin/$(Configuration)/$(TargetFramework)/DtfDeterminismAnalyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs\DtfDeterminismAnalyzer.CodeFixes.dll" Visible="false" />
   </ItemGroup>
 
   <!-- Package assets -->

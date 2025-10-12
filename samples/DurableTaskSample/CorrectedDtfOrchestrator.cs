@@ -12,7 +12,7 @@ public class CorrectedDtfOrchestrator
     /// Properly deterministic orchestrator method.
     /// Uses TaskOrchestrationContext parameter which makes analyzer treat it as an orchestrator.
     /// </summary>
-    public async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
     {
         // ✅ Use context.CurrentUtcDateTime instead of DateTime.Now/UtcNow
         DateTime startTime = context.CurrentUtcDateTime.ToLocalTime();

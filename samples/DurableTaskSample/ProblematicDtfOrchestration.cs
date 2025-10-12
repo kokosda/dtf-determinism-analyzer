@@ -20,7 +20,7 @@ public class ProblematicDtfOrchestration
     /// Simulated orchestrator method with DTF context parameter.
     /// The analyzer detects this as an orchestrator based on the TaskOrchestrationContext parameter.
     /// </summary>
-    public async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
     {
         // ❌ DFA0001: Using DateTime.Now in orchestrator (non-deterministic!)
         DateTime startTime = DateTime.Now;
