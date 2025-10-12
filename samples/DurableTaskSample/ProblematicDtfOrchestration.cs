@@ -1,0 +1,66 @@
+using Microsoft.DurableTask;
+
+namespace DurableTaskSample;
+
+/// <summary>
+/// Demonstrates problematic patterns in core Durable Task Framework orchestrations.
+/// This class contains orchestrator-like methods that violate determinism rules
+/// to show how the analyzer detects issues in DTF contexts (not just Azure Functions).
+/// 
+/// Note: This sample focuses on demonstrating analyzer behavior rather than runtime execution.
+/// The analyzer detects patterns based on method signatures and context parameters.
+/// </summary>
+public class ProblematicDtfOrchestration
+{
+    // ❌ DFA0006: Static mutable state access
+    private static int _staticCounter = 0;
+    private static readonly object _lockObject = new object();
+
+    /// <summary>
+    /// Simulated orchestrator method with DTF context parameter.
+    /// The analyzer detects this as an orchestrator based on the TaskOrchestrationContext parameter.
+    /// </summary>
+    public async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // ❌ DFA0001: Using DateTime.Now in orchestrator (non-deterministic!)
+        DateTime startTime = DateTime.Now;
+
+        // ❌ DFA0001: Using DateTime.UtcNow in orchestrator (non-deterministic!)
+        DateTime utcTime = DateTime.UtcNow;
+
+        // ❌ DFA0002: Using Guid.NewGuid() in orchestrator (non-deterministic!)
+        var correlationId = Guid.NewGuid();
+
+        // ❌ DFA0007: Using Thread.Sleep in orchestrator (blocking operation!)
+        Thread.Sleep(1000);
+
+        // ❌ DFA0008: Using non-durable async operations
+        await Task.Delay(500);
+
+        // ❌ DFA0003: Using non-deterministic Random
+        var random = new Random();
+        int randomValue = random.Next(1, 100);
+
+        // ❌ DFA0004: File I/O operations in orchestrator
+        string fileContent = await File.ReadAllTextAsync("config.txt");
+
+        // ❌ DFA0005: Environment variable access in orchestrator
+        string? envVar = Environment.GetEnvironmentVariable("TEMP");
+
+        // ❌ DFA0006: Static state access and modification
+        int currentCount = _staticCounter;
+        lock (_lockObject)
+        {
+            // ❌ DFA0009: Using lock (threading API)
+            _staticCounter++;
+        }
+
+        // ❌ DFA0008: Non-durable async operation
+        string httpResult = await new HttpClient().GetStringAsync("https://api.example.com/data");
+
+        // This is OK - simulated activity call (real implementation would use context.CallActivityAsync)
+        string result = $"Processed: {input} with violations - Start: {startTime}, ID: {correlationId}, Random: {randomValue}";
+
+        return result;
+    }
+}

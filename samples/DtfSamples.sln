@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurableFunctionsSample", "DurableFunctionsSample\DurableFunctionsSample.csproj", "{FED6A506-15DB-4036-937B-A85C8FF5D16A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurableTaskSample", "DurableTaskSample\DurableTaskSample.csproj", "{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DtfDeterminismAnalyzer", "..\src\DtfDeterminismAnalyzer\DtfDeterminismAnalyzer.csproj", "{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|x64.Build.0 = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Debug|x86.Build.0 = Debug|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|x64.ActiveCfg = Release|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|x64.Build.0 = Release|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|x86.ActiveCfg = Release|Any CPU
+		{FED6A506-15DB-4036-937B-A85C8FF5D16A}.Release|x86.Build.0 = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|x64.Build.0 = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Debug|x86.Build.0 = Debug|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|x64.ActiveCfg = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|x64.Build.0 = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|x86.ActiveCfg = Release|Any CPU
+		{DB44DE7E-A94C-4CB9-9EA8-B7B45A5921AF}.Release|x86.Build.0 = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|x64.Build.0 = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Debug|x86.Build.0 = Debug|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|x64.ActiveCfg = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|x64.Build.0 = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|x86.ActiveCfg = Release|Any CPU
+		{BE1A7375-E724-CDEE-BB79-2CCE113DCB84}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

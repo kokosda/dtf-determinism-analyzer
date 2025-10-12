@@ -18,7 +18,9 @@
 
   <!-- Add the DTF Determinism Analyzer -->
   <ItemGroup>
-    <Analyzer Include="../../src/DtfDeterminismAnalyzer/bin/Release/netstandard2.0/DtfDeterminismAnalyzer.dll" />
+    <ProjectReference Include="../../src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj" 
+                      OutputItemType="Analyzer" 
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
