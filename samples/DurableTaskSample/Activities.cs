@@ -181,6 +181,97 @@ public static class Activities
         logger.LogInformation("Final processing completed with {Count} chunks", chunkResults.Length);
         return Task.FromResult(result);
     }
+
+    // DFA0010 Binding-related activities for DTF
+    // These activities demonstrate how to properly handle binding operations
+    // that would be problematic if done directly in DTF orchestrators
+
+    /// <summary>
+    /// Processes blob data safely in activity context.
+    /// ✅ Blob operations are safe in activities, not in orchestrators.
+    /// </summary>
+    [Function(nameof(ProcessBlobActivity))]
+    public static async Task<string> ProcessBlobActivity([ActivityTrigger] object input, ILogger logger)
+    {
+        dynamic inputData = input;
+        string containerName = inputData.containerName;
+        string blobName = inputData.blobName;
+
+        logger.LogInformation("Processing blob {BlobName} from container {ContainerName}",
+            blobName, containerName);
+
+        // Simulate blob processing - in reality, you'd use Azure.Storage.Blobs
+        await Task.Delay(200); // Simulate blob read operation
+
+        string content = $"Blob content from {containerName}/{blobName}: Sample data processed at {DateTime.UtcNow}";
+        logger.LogInformation("Successfully processed blob with {Length} characters", content.Length);
+
+        return content;
+    }
+
+    /// <summary>
+    /// Processes queue messages safely in activity context.
+    /// ✅ Queue operations are safe in activities, not in orchestrators.
+    /// </summary>
+    [Function(nameof(ProcessQueueMessageActivity))]
+    public static Task<string> ProcessQueueMessageActivity([ActivityTrigger] object input, ILogger logger)
+    {
+        dynamic inputData = input;
+        string queueName = inputData.queueName;
+        string message = inputData.message;
+
+        logger.LogInformation("Processing queue message from {QueueName}: {Message}",
+            queueName, message);
+
+        string result = $"Processed message from {queueName}: {message} at {DateTime.UtcNow}";
+        logger.LogInformation("Queue message processing completed");
+
+        return Task.FromResult(result);
+    }
+
+    /// <summary>
+    /// Saves data to table storage safely in activity context.
+    /// ✅ Table operations are safe in activities, not in orchestrators.
+    /// </summary>
+    [Function(nameof(SaveToTableActivity))]
+    public static async Task SaveToTableActivity([ActivityTrigger] object input, ILogger logger)
+    {
+        dynamic inputData = input;
+        string tableName = inputData.tableName;
+        dynamic data = inputData.data;
+
+        logger.LogInformation("Saving data to table {TableName}", tableName);
+
+        // Simulate table storage operation - in reality, you'd use Azure.Data.Tables
+        await Task.Delay(100);
+
+        logger.LogInformation("Successfully saved data to table {TableName}: {Data}",
+            tableName, (object)System.Text.Json.JsonSerializer.Serialize(data));
+    }
+
+    /// <summary>
+    /// Processes Service Bus messages safely in activity context.
+    /// ✅ Service Bus operations are safe in activities, not in orchestrators.
+    /// </summary>
+    [Function(nameof(ProcessServiceBusMessageActivity))]
+    public static async Task<string> ProcessServiceBusMessageActivity([ActivityTrigger] object input, ILogger logger)
+    {
+        dynamic inputData = input;
+        string topic = inputData.topic;
+        string subscription = inputData.subscription;
+        string message = inputData.message;
+
+        logger.LogInformation("Processing Service Bus message from {Topic}/{Subscription}: {Message}",
+            topic, subscription, message);
+
+        // Simulate Service Bus message processing - in reality, you'd use Azure.Messaging.ServiceBus
+        await Task.Delay(150);
+
+        string result = $"Service Bus message processed from {topic}/{subscription}: {message} at {DateTime.UtcNow}";
+        logger.LogInformation("Service Bus message processing completed");
+
+        return result;
+    }
 }
 
 /// <summary>
@@ -203,4 +294,49 @@ public class FunctionAttribute : Attribute
 [AttributeUsage(AttributeTargets.Parameter)]
 public class ActivityTriggerAttribute : Attribute
 {
+}
+
+/// <summary>
+/// Mock binding attributes for demonstration purposes in DTF context.
+/// These simulate Azure Functions binding attributes to show DFA0010 detection.
+/// </summary>
+[AttributeUsage(AttributeTargets.Parameter)]
+public class BlobTriggerAttribute : Attribute
+{
+    public string Path { get; }
+    public BlobTriggerAttribute(string path) => Path = path;
+}
+
+[AttributeUsage(AttributeTargets.Parameter)]
+public class QueueTriggerAttribute : Attribute
+{
+    public string QueueName { get; }
+    public QueueTriggerAttribute(string queueName) => QueueName = queueName;
+}
+
+[AttributeUsage(AttributeTargets.Parameter)]
+public class TableAttribute : Attribute
+{
+    public string TableName { get; }
+    public TableAttribute(string tableName) => TableName = tableName;
+}
+
+[AttributeUsage(AttributeTargets.Parameter)]
+public class ServiceBusTriggerAttribute : Attribute
+{
+    public string Topic { get; }
+    public string Subscription { get; }
+    public ServiceBusTriggerAttribute(string topic, string subscription)
+    {
+        Topic = topic;
+        Subscription = subscription;
+    }
+}
+
+/// <summary>
+/// Mock interface for table collectors (similar to Azure Functions).
+/// </summary>
+public interface IAsyncCollector<T>
+{
+    Task AddAsync(T item, CancellationToken cancellationToken = default);
 }

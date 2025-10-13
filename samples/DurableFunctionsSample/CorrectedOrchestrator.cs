@@ -99,4 +99,58 @@ public class CorrectedOrchestrator
             return "Operation failed after retries";
         }
     }
+
+    /// <summary>
+    /// Demonstrates the CORRECT approach for DFA0010: delegate binding operations to activities.
+    /// ✅ This orchestrator properly delegates all binding access to activities,
+    /// maintaining determinism while still processing external data.
+    /// </summary>
+    [Function(nameof(RunWithProperBindingDelegation))]
+    public async Task<string> RunWithProperBindingDelegation([OrchestrationTrigger] TaskOrchestrationContext context)
+    {
+        // ✅ Pass blob processing to activity - no direct binding in orchestrator
+        string blobContent = await context.CallActivityAsync<string>(
+            nameof(Activities.ProcessBlobActivity),
+            new { containerName = "container", blobName = "data.txt" });
+
+        // ✅ Pass queue processing to activity - no direct binding in orchestrator  
+        string queueResult = await context.CallActivityAsync<string>(
+            nameof(Activities.ProcessQueueMessageActivity),
+            new { queueName = "processing-queue", message = "sample-message" });
+
+        // ✅ Pass table operations to activity - no direct binding in orchestrator
+        await context.CallActivityAsync(
+            nameof(Activities.SaveToTableActivity),
+            new { 
+                tableName = "DataTable",
+                data = new { 
+                    BlobContent = blobContent.Substring(0, Math.Min(100, blobContent.Length)),
+                    QueueResult = queueResult,
+                    Timestamp = context.CurrentUtcDateTime 
+                }
+            });
+
+        return $"Successfully processed blob and queue data: {queueResult}";
+    }
+
+    /// <summary>
+    /// More examples of proper binding delegation.
+    /// ✅ All external service access is delegated to activities.
+    /// </summary>
+    [Function(nameof(RunWithCompleteBindingDelegation))]
+    public async Task<string> RunWithCompleteBindingDelegation([OrchestrationTrigger] TaskOrchestrationContext context)
+    {
+        // ✅ HTTP processing delegated to activity
+        string httpResult = await context.CallActivityAsync<string>(
+            nameof(Activities.ProcessHttpRequestActivity),
+            new { url = "https://api.example.com/data", method = "GET" });
+
+        // ✅ Service Bus processing delegated to activity
+        string serviceBusResult = await context.CallActivityAsync<string>(
+            nameof(Activities.ProcessServiceBusMessageActivity),
+            new { topic = "notifications", subscription = "processors", message = httpResult });
+
+        // Orchestrator only coordinates - all I/O through activities
+        return $"Processed HTTP and Service Bus: {serviceBusResult}";
+    }
 }

@@ -201,6 +201,90 @@ public class Activities
         return $"Processed: {item} (took {delay}ms)";
     }
 
+    // DFA0010 Binding-related activities
+    // These activities demonstrate how to properly handle binding operations
+    // that would be problematic if done directly in orchestrators
+
+    [Function(nameof(ProcessBlobActivity))]
+    public async Task<string> ProcessBlobActivity([ActivityTrigger] dynamic input)
+    {
+        string containerName = input.containerName;
+        string blobName = input.blobName;
+
+        _logger.LogInformation("Processing blob {BlobName} from container {ContainerName}",
+            blobName, containerName);
+
+        // Simulate blob processing - in reality, you'd use BlobServiceClient
+        await Task.Delay(200); // Simulate blob read operation
+
+        return $"Blob content from {containerName}/{blobName}: Sample blob data processed at {DateTime.UtcNow}";
+    }
+
+    [Function(nameof(ProcessQueueMessageActivity))]
+    public string ProcessQueueMessageActivity([ActivityTrigger] dynamic input)
+    {
+        string queueName = input.queueName;
+        string message = input.message;
+
+        _logger.LogInformation("Processing queue message from {QueueName}: {Message}",
+            queueName, message);
+
+        // Simulate queue message processing
+        return $"Processed message from {queueName}: {message} at {DateTime.UtcNow}";
+    }
+
+    [Function(nameof(SaveToTableActivity))]
+    public async Task SaveToTableActivity([ActivityTrigger] dynamic input)
+    {
+        string tableName = input.tableName;
+        dynamic data = input.data;
+
+        _logger.LogInformation("Saving data to table {TableName}: {Data}",
+            tableName, (object)JsonSerializer.Serialize(data));
+
+        // Simulate table storage operation
+        await Task.Delay(100);
+
+        _logger.LogInformation("Successfully saved data to table {TableName}", tableName);
+    }
+
+    [Function(nameof(ProcessHttpRequestActivity))]
+    public async Task<string> ProcessHttpRequestActivity([ActivityTrigger] dynamic input)
+    {
+        string url = input.url;
+        string method = input.method;
+
+        _logger.LogInformation("Processing HTTP request: {Method} {Url}", method, url);
+
+        // Simulate HTTP request processing
+        await Task.Delay(300);
+
+        return JsonSerializer.Serialize(new
+        {
+            method,
+            url,
+            response = "HTTP response data",
+            timestamp = DateTime.UtcNow,
+            statusCode = 200
+        });
+    }
+
+    [Function(nameof(ProcessServiceBusMessageActivity))]
+    public async Task<string> ProcessServiceBusMessageActivity([ActivityTrigger] dynamic input)
+    {
+        string topic = input.topic;
+        string subscription = input.subscription;
+        string message = input.message;
+
+        _logger.LogInformation("Processing Service Bus message from {Topic}/{Subscription}: {Message}",
+            topic, subscription, message);
+
+        // Simulate Service Bus message processing
+        await Task.Delay(150);
+
+        return $"Service Bus message processed from {topic}/{subscription}: {message} at {DateTime.UtcNow}";
+    }
+
     // Helper methods
 
     private async Task<string> SimulateApiCall(string url)

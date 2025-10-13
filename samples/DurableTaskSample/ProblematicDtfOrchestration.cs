@@ -67,4 +67,40 @@ public class ProblematicDtfOrchestration
 
         return result;
     }
+
+    /// <summary>
+    /// Demonstrates DFA0010 violations in DTF context: direct binding usage.
+    /// Even in core DTF (outside Azure Functions), binding attributes are problematic in orchestrators.
+    /// </summary>
+    public static async Task<string> OrchestrationWithBindingViolations(
+        TaskOrchestrationContext context,
+        // ❌ DFA0010: Direct binding attributes in orchestrator parameters
+        [BlobTrigger("container/{name}")] Stream blobData,
+        [QueueTrigger("queue")] string queueMessage)
+    {
+        // ❌ DFA0010: Direct blob access in orchestrator
+        using var reader = new StreamReader(blobData);
+        string content = await reader.ReadToEndAsync();
+
+        // ❌ DFA0010: Direct queue message processing in orchestrator
+        string processed = $"DTF Processing: {queueMessage} with blob length {content.Length}";
+
+        return processed;
+    }
+
+    /// <summary>
+    /// More DFA0010 violations with various binding types in DTF context.
+    /// </summary>
+    public static string OrchestrationWithMoreBindingViolations(
+        TaskOrchestrationContext context,
+        // ❌ DFA0010: Table binding in orchestrator
+        [Table("MyTable")] IAsyncCollector<dynamic> table,
+        // ❌ DFA0010: ServiceBus binding in orchestrator  
+        [ServiceBusTrigger("topic", "sub")] string message)
+    {
+        // ❌ DFA0010: Direct binding operations in orchestrator
+        table.AddAsync(new { Data = message, Timestamp = DateTime.UtcNow });
+        
+        return $"DTF processed ServiceBus message: {message}";
+    }
 }

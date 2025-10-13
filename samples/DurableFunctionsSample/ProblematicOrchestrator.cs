@@ -1,4 +1,5 @@
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 
@@ -99,6 +100,58 @@ public class ProblematicOrchestrator
         string result = await context.CallActivityAsync<string>(
             nameof(Activities.ProcessRandomDataActivity),
             new { randomValue, envVar, fileContent, currentCounter });
+
+        return result;
+    }
+
+    /// <summary>
+    /// Demonstrates DFA0010 violations: direct binding usage in orchestrator.
+    /// ❌ This orchestrator incorrectly uses Azure Functions bindings directly,
+    /// which violates determinism rules.
+    /// </summary>
+    [Function(nameof(RunWithDirectBindingsViolation))]
+    public async Task<string> RunWithDirectBindingsViolation(
+        [OrchestrationTrigger] TaskOrchestrationContext context,
+        // ❌ DFA0010: Direct BlobTrigger binding in orchestrator parameter
+        [BlobTrigger("container/{name}")] Stream blob,
+        // ❌ DFA0010: Direct QueueTrigger binding in orchestrator parameter  
+        [QueueTrigger("processing-queue")] string queueMessage,
+        // ❌ DFA0010: Direct Table binding in orchestrator parameter
+        [Table("DataTable")] IAsyncCollector<dynamic> tableOutput)
+    {
+        // ❌ DFA0010: Direct access to blob binding in orchestrator
+        using var reader = new StreamReader(blob);
+        string blobContent = await reader.ReadToEndAsync();
+
+        // ❌ DFA0010: Direct access to queue message in orchestrator
+        string processedMessage = $"Processing: {queueMessage}";
+
+        // ❌ DFA0010: Direct table output binding usage in orchestrator
+        await tableOutput.AddAsync(new { 
+            Message = processedMessage,
+            BlobContent = blobContent.Substring(0, Math.Min(100, blobContent.Length)),
+            Timestamp = context.CurrentUtcDateTime 
+        });
+
+        return $"Processed queue message: {queueMessage}";
+    }
+
+    /// <summary>
+    /// More DFA0010 violations with different binding types.
+    /// </summary>
+    [Function(nameof(RunWithMoreBindingViolations))]
+    public async Task<string> RunWithMoreBindingViolations(
+        [OrchestrationTrigger] TaskOrchestrationContext context,
+        // ❌ DFA0010: Direct HttpTrigger in orchestrator (should never happen in practice)
+        [HttpTrigger(AuthorizationLevel.Function)] HttpRequestData req,
+        // ❌ DFA0010: Direct ServiceBus binding in orchestrator
+        [ServiceBusTrigger("topic", "subscription")] string serviceBusMessage)
+    {
+        // ❌ DFA0010: Direct HTTP request handling in orchestrator
+        string requestBody = await req.ReadAsStringAsync() ?? "";
+
+        // ❌ DFA0010: Direct Service Bus message processing in orchestrator
+        string result = $"HTTP: {requestBody}, ServiceBus: {serviceBusMessage}";
 
         return result;
     }
