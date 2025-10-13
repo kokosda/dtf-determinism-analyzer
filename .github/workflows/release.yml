@@ -13,6 +13,10 @@ on:
         default: false
         type: boolean
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   validate-release:
     name: Validate Release

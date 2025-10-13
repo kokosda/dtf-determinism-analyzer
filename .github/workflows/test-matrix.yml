@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   test-matrix:
     name: Test on ${{ matrix.os }} with .NET ${{ matrix.dotnet-version }}

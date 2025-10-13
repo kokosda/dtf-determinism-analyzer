@@ -9,6 +9,10 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  pull-requests: read
+
 # NOTE: This workflow focuses on dependency security scanning.
 # Code scanning is handled by GitHub's default CodeQL setup, which provides
 # automatic security analysis without configuration conflicts.
