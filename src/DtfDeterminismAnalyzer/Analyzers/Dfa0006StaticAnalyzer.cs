@@ -337,20 +337,20 @@ namespace DtfDeterminismAnalyzer.Analyzers
                 return null;
             }
 
-            // Check if this method has the [OrchestrationTrigger] attribute
-            if (HasOrchestrationTriggerAttribute(containingMethod))
+            // Check if this method is an orchestrator method (has [OrchestrationTrigger] attribute or orchestration context parameter)
+            if (HasOrchestrationTriggerAttribute(containingMethod) || HasOrchestrationContextParameter(containingMethod))
             {
                 return containingMethod;
             }
 
-            // If not, look for other methods in the same class that have the [OrchestrationTrigger] attribute
+            // If not, look for other methods in the same class that are orchestrator methods
             // This handles cases where static field access is in helper methods within the orchestrator class
             ClassDeclarationSyntax? containingClass = containingMethod.FirstAncestorOrSelf<ClassDeclarationSyntax>();
             if (containingClass != null)
             {
                 foreach (MethodDeclarationSyntax method in containingClass.Members.OfType<MethodDeclarationSyntax>())
                 {
-                    if (HasOrchestrationTriggerAttribute(method))
+                    if (HasOrchestrationTriggerAttribute(method) || HasOrchestrationContextParameter(method))
                     {
                         return method;
                     }
@@ -377,6 +377,37 @@ namespace DtfDeterminismAnalyzer.Analyzers
                             return true;
                         }
                     }
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a method has an orchestration context parameter (TaskOrchestrationContext or IDurableOrchestrationContext)
+        /// </summary>
+        private static bool HasOrchestrationContextParameter(MethodDeclarationSyntax method)
+        {
+            if (method?.ParameterList?.Parameters == null)
+            {
+                return false;
+            }
+
+            foreach (ParameterSyntax parameter in method.ParameterList.Parameters)
+            {
+                if (parameter.Type == null)
+                {
+                    continue;
+                }
+
+                string typeName = parameter.Type.ToString();
+                
+                // Check for known orchestration context types
+                if (typeName.Contains("TaskOrchestrationContext") ||
+                    typeName.Contains("IDurableOrchestrationContext") ||
+                    typeName.Contains("DurableOrchestrationContextBase"))
+                {
+                    return true;
                 }
             }
 

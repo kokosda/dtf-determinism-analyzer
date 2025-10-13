@@ -31,12 +31,6 @@ public class ProblematicDtfOrchestration
         // ❌ DFA0002: Using Guid.NewGuid() in orchestrator (non-deterministic!)
         var correlationId = Guid.NewGuid();
 
-        // ❌ DFA0007: Using Thread.Sleep in orchestrator (blocking operation!)
-        Thread.Sleep(1000);
-
-        // ❌ DFA0008: Using non-durable async operations
-        await Task.Delay(500);
-
         // ❌ DFA0003: Using non-deterministic Random
         var random = new Random();
         int randomValue = random.Next(1, 100);
@@ -52,14 +46,21 @@ public class ProblematicDtfOrchestration
 
         // ❌ DFA0006: Static state access and modification
         int currentCount = _staticCounter;
-        lock (_lockObject)
-        {
-            // ❌ DFA0009: Using lock (threading API)
-            _staticCounter++;
-        }
+
+        // ❌ DFA0007: Using Thread.Sleep in orchestrator (blocking operation!)
+        Thread.Sleep(1000);
+
+        // ❌ DFA0008: Non-durable async operations
+        await Task.Delay(500);
 
         // ❌ DFA0008: Non-durable async operation
         string httpResult = await new HttpClient().GetStringAsync("https://api.example.com/data");
+
+        // ❌ DFA0009: Using lock (threading API)
+        lock (_lockObject)
+        {
+            _staticCounter++;
+        }
 
         // This is OK - simulated activity call (real implementation would use context.CallActivityAsync)
         string result = $"Processed: {input} with violations - Start: {startTime}, ID: {correlationId}, Random: {randomValue}";

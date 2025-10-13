@@ -6,7 +6,7 @@ namespace DurableTaskSample;
 /// Demonstrates the corrected version following DTF determinism rules.
 /// This orchestrator uses proper patterns and will not trigger analyzer warnings.
 /// </summary>
-public class CorrectedDtfOrchestrator
+public class CorrectedDtfOrchestration
 {
     /// <summary>
     /// Properly deterministic orchestrator method.

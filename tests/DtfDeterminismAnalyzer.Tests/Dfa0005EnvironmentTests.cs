@@ -264,5 +264,154 @@ public class TestOrchestrator
 }";
 
             await VerifyDFA0005Diagnostic(testCode);        }
+
+        #region TaskOrchestrationContext Tests (Core DTF)
+
+        private const string TaskOrchestrationContextUsing = @"
+using System;
+using System.Threading.Tasks;
+using Microsoft.DurableTask;
+";
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_EnvironmentGetEnvironmentVariable_ReportsDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var connectionString = Environment.GetEnvironmentVariable(""DATABASE_CONNECTION"");
+        return $""Input: {input}, Connection: {connectionString}"";
+    }
+}";
+
+            await VerifyDFA0005Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_EnvironmentGetEnvironmentVariables_ReportsDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var envVars = Environment.GetEnvironmentVariables();
+        return $""Input: {input}, EnvCount: {envVars.Count}"";
+    }
+}";
+
+            await VerifyDFA0005Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_EnvironmentMachineName_ReportsDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var machineName = Environment.MachineName;
+        return $""Input: {input}, Machine: {machineName}"";
+    }
+}";
+
+            await VerifyDFA0005Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_EnvironmentUserName_ReportsDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var userName = Environment.UserName;
+        return $""Input: {input}, User: {userName}"";
+    }
+}";
+
+            await VerifyDFA0005Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_EnvironmentCurrentDirectory_ReportsDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var currentDir = Environment.CurrentDirectory;
+        return $""Input: {input}, Dir: {currentDir}"";
+    }
+}";
+
+            await VerifyDFA0005Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_MultipleEnvironmentCalls_ReportsMultipleDFA0005()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var machine = Environment.MachineName;
+        var user = Environment.UserName;
+        var envVar = Environment.GetEnvironmentVariable(""PATH"");
+        return $""Input: {input}, Machine: {machine}, User: {user}, Path: {envVar}"";
+    }
+}";
+
+            await VerifyMultipleDFA0005Diagnostics(testCode, 3);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_NoEnvironmentAccess_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // No environment access - should not trigger DFA0005
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_HelperMethodInSeparateClass_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        return await HelperClass.ProcessInput(input);
+    }
+}
+
+// Helper class separate from orchestrator - should not trigger DFA0005
+public class HelperClass
+{
+    public static async Task<string> ProcessInput(string input)
+    {
+        var envVar = Environment.GetEnvironmentVariable(""HELPER_VAR"");
+        return $""Helper processed: {input}, Env: {envVar}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        #endregion
     }
 }

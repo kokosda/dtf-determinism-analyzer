@@ -6,7 +6,7 @@ namespace DurableTaskSample;
 /// Complex orchestrator demonstrating advanced DTF patterns.
 /// Shows how analyzer handles more complex orchestration scenarios.
 /// </summary>
-public class ComplexDtfOrchestrator
+public class ComplexDtfOrchestration
 {
     /// <summary>
     /// Complex orchestration with multiple deterministic patterns.

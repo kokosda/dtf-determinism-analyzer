@@ -298,5 +298,99 @@ public class TestOrchestrator
 }";
 
             await VerifyDFA0004Diagnostic(testCode);        }
+
+        #region TaskOrchestrationContext Tests (Core DTF)
+
+        private const string TaskOrchestrationContextUsing = @"
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.DurableTask;
+";
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_FileReadAllText_ReportsDFA0004()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var config = File.ReadAllText(""config.json"");
+        return $""Input: {input}, Config: {config}"";
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_FileWriteAllText_ReportsDFA0004()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        File.WriteAllText(""output.txt"", input);
+        return $""Wrote: {input}"";
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_HttpClientGetAsync_ReportsDFA0004()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static readonly HttpClient httpClient = new HttpClient();
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var response = await httpClient.GetStringAsync(""https://api.example.com/data"");
+        return $""Input: {input}, Response: {response}"";
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_FileReadAllTextAsync_ReportsDFA0004()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var config = await File.ReadAllTextAsync(""config.json"");
+        return $""Input: {input}, Config: {config}"";
+    }
+}";
+
+            await VerifyDFA0004Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_NoIoOperations_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // No I/O operations - should not trigger DFA0004
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        #endregion
     }
 }

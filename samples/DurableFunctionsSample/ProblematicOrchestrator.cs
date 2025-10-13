@@ -58,16 +58,22 @@ public class ProblematicOrchestrator
     [Function(nameof(RunMoreProblematicPatterns))]
     public async Task<string> RunMoreProblematicPatterns([OrchestrationTrigger] TaskOrchestrationContext context)
     {
+        // ❌ DFA0001: Using DateTime.Now in orchestrator (non-deterministic!)
+        DateTime startTime = DateTime.Now;
+
+        // ❌ DFA0001: Using DateTime.UtcNow in orchestrator (non-deterministic!)
+        DateTime utcTime = DateTime.UtcNow;
+
+        // ❌ DFA0002: Using Guid.NewGuid() in orchestrator (non-deterministic!)
+        var correlationId = Guid.NewGuid();
+
         // ❌ DFA0003: Random without deterministic seed
         var random = new Random();
         int randomValue = random.Next(1, 100);
 
-        // ❌ DFA0008: Task.Delay (non-durable async operation)
-        await Task.Delay(2000);
-
         // ❌ DFA0004: Direct I/O operation in orchestrator  
         string fileContent = File.ReadAllText("config.txt");
-        
+
         // ❌ DFA0004: File I/O operations in orchestrator (async version)
         string fileContentAsync = await File.ReadAllTextAsync("config.txt");
 
@@ -77,6 +83,12 @@ public class ProblematicOrchestrator
         // ❌ DFA0006: Static state access
         int currentCounter = _staticCounter;
         _staticCounter++;
+
+        // ❌ DFA0007: Using Thread.Sleep in orchestrator (blocking operation!)
+        Thread.Sleep(1000);
+
+        // ❌ DFA0008: Task.Delay (non-durable async operation)
+        await Task.Delay(2000);
 
         // ❌ DFA0009: Threading API usage 
         lock (_lockObject)

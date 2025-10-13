@@ -297,5 +297,103 @@ public class TestOrchestrator
 }";
 
             await VerifyDFA0006Diagnostic(testCode);        }
+
+        #region TaskOrchestrationContext Tests (Core DTF)
+
+        private const string TaskOrchestrationContextUsing = @"
+using System;
+using System.Threading.Tasks;
+using Microsoft.DurableTask;
+";
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_StaticFieldRead_ReportsDFA0006()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static int _counter = 0;
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var currentValue = _counter;
+        return $""Input: {input}, Counter: {currentValue}"";
+    }
+}";
+
+            await VerifyDFA0006Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_StaticFieldWrite_ReportsDFA0006()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static int _counter = 0;
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        _counter++;
+        return $""Input: {input}, Counter incremented"";
+    }
+}";
+
+            await VerifyDFA0006Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_StaticPropertyRead_ReportsDFA0006()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static string _configuration { get; set; } = ""default"";
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var config = _configuration;
+        return $""Input: {input}, Config: {config}"";
+    }
+}";
+
+            await VerifyDFA0006Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_StaticReadonlyField_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static readonly string _constantValue = ""constant"";
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var constant = _constantValue;
+        return $""Input: {input}, Constant: {constant}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_NoStaticAccess_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // No static access - should not trigger DFA0006
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        #endregion
     }
 }

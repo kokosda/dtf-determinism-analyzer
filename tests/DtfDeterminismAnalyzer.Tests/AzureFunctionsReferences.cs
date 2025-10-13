@@ -22,6 +22,17 @@ namespace DtfDeterminismAnalyzer.Tests
         );
 
         /// <summary>
+        /// Gets the core Durable Task Framework packages required for TaskOrchestrationContext support.
+        /// These packages provide the modern DTF types like TaskOrchestrationContext, etc.
+        /// </summary>
+        public static ImmutableArray<PackageIdentity> DurableTaskPackages { get; } = ImmutableArray.Create(
+            // Core Durable Task Framework packages
+            new PackageIdentity("Microsoft.DurableTask.Abstractions", "1.1.0"),
+            new PackageIdentity("Microsoft.DurableTask.Client", "1.1.0"),
+            new PackageIdentity("Microsoft.DurableTask.Worker", "1.1.0")
+        );
+
+        /// <summary>
         /// Gets the HTTP trigger support packages required for HTTP-based Azure Functions.
         /// These packages provide types like HttpTrigger, IActionResult, HttpRequest, etc.
         /// </summary>
@@ -56,6 +67,7 @@ namespace DtfDeterminismAnalyzer.Tests
         /// </summary>
         public static ImmutableArray<PackageIdentity> AllPackages { get; } = 
             CorePackages
+                .AddRange(DurableTaskPackages)
                 .AddRange(HttpPackages)
                 .AddRange(LoggingPackages)
                 .AddRange(UtilityPackages);
@@ -65,7 +77,7 @@ namespace DtfDeterminismAnalyzer.Tests
         /// Use this for tests that only need core orchestration functionality without HTTP or complex features.
         /// </summary>
         public static ImmutableArray<PackageIdentity> MinimalPackages { get; } = 
-            CorePackages.AddRange(LoggingPackages);
+            CorePackages.AddRange(DurableTaskPackages).AddRange(LoggingPackages);
 
         /// <summary>
         /// Gets packages for HTTP-triggered Azure Functions.
@@ -73,6 +85,7 @@ namespace DtfDeterminismAnalyzer.Tests
         /// </summary>
         public static ImmutableArray<PackageIdentity> HttpFunctionPackages { get; } =
             CorePackages
+                .AddRange(DurableTaskPackages)
                 .AddRange(HttpPackages)
                 .AddRange(LoggingPackages);
 

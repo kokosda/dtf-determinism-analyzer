@@ -216,7 +216,7 @@ namespace DtfDeterminismAnalyzer.Analyzers
             string? typeName = containingType?.Name;
             string? namespaceName = containingType?.ContainingNamespace?.ToDisplayString();
 
-            // Durable Functions context methods are considered durable
+            // Durable Functions context methods are considered durable (Azure Functions)
             if (typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext" or "IDurableActivityContext" or "DurableActivityContext")
             {
                 return methodSymbol.Name is
@@ -224,6 +224,15 @@ namespace DtfDeterminismAnalyzer.Analyzers
                     "CallSubOrchestratorAsync" or "CallSubOrchestratorWithRetryAsync" or
                     "CreateTimer" or "WaitForExternalEvent" or
                     "CallEntityAsync" or "CallHttpAsync";
+            }
+
+            // DTF core context methods are also considered durable
+            if (typeName is "TaskOrchestrationContext" or "TaskActivityContext")
+            {
+                return methodSymbol.Name is
+                    "CallActivityAsync" or "CallSubOrchestratorAsync" or
+                    "CreateTimer" or "WaitForExternalEvent" or
+                    "SetOutput" or "GetInput";
             }
 
             // Task.WhenAll and Task.WhenAny - their durability depends on their arguments
@@ -268,12 +277,23 @@ namespace DtfDeterminismAnalyzer.Analyzers
             INamedTypeSymbol containingType = propertySymbol.ContainingType;
             string? typeName = containingType?.Name;
 
-            // Durable Functions context properties are considered safe
-            return typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext"
-                ? propertySymbol.Name is
+            // Durable Functions context properties are considered safe (Azure Functions)
+            if (typeName is "IDurableOrchestrationContext" or "DurableOrchestrationContext")
+            {
+                return propertySymbol.Name is
                     "CurrentUtcDateTime" or "NewGuid" or "IsReplaying" or
-                    "InstanceId" or "ParentInstanceId"
-                : false;
+                    "InstanceId" or "ParentInstanceId";
+            }
+
+            // DTF core context properties are also considered safe
+            if (typeName is "TaskOrchestrationContext")
+            {
+                return propertySymbol.Name is
+                    "CurrentUtcDateTime" or "NewGuid" or "IsReplaying" or
+                    "InstanceId" or "ParentInstanceId";
+            }
+
+            return false;
         }
 
         private static bool IsNonDurableAsyncMethod(IMethodSymbol methodSymbol)
@@ -414,12 +434,19 @@ namespace DtfDeterminismAnalyzer.Analyzers
         {
             MethodDeclarationSyntax? method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
             
-            // Check if this method or any ancestor method has an OrchestrationTrigger parameter
+            // Check if this method or any ancestor method is an orchestrator method
             while (method != null)
             {
+                // Check for [OrchestrationTrigger] attribute
                 if (method.ParameterList?.Parameters.Any(p => 
                     p.AttributeLists.SelectMany(al => al.Attributes)
                         .Any(attr => attr.Name.ToString().Contains("OrchestrationTrigger"))) == true)
+                {
+                    return method;
+                }
+                
+                // Check for orchestration context parameter types
+                if (HasOrchestrationContextParameter(method))
                 {
                     return method;
                 }
@@ -471,6 +498,37 @@ namespace DtfDeterminismAnalyzer.Analyzers
             // Include location to distinguish multiple calls to the same method
             LinePosition linePosition = location.GetLineSpan().StartLinePosition;
             return $"{baseKey}@{linePosition.Line}:{linePosition.Character}";
+        }
+
+        /// <summary>
+        /// Checks if a method has an orchestration context parameter (TaskOrchestrationContext or IDurableOrchestrationContext)
+        /// </summary>
+        private static bool HasOrchestrationContextParameter(MethodDeclarationSyntax method)
+        {
+            if (method?.ParameterList?.Parameters == null)
+            {
+                return false;
+            }
+
+            foreach (ParameterSyntax parameter in method.ParameterList.Parameters)
+            {
+                if (parameter.Type == null)
+                {
+                    continue;
+                }
+
+                string typeName = parameter.Type.ToString();
+                
+                // Check for known orchestration context types
+                if (typeName.Contains("TaskOrchestrationContext") ||
+                    typeName.Contains("IDurableOrchestrationContext") ||
+                    typeName.Contains("DurableOrchestrationContextBase"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

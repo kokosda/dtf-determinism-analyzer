@@ -68,12 +68,12 @@ public class Activities
         // return await File.ReadAllTextAsync(fileName);
 
         // Simulated config content
-        return JsonSerializer.Serialize(new
+        return Task.FromResult(JsonSerializer.Serialize(new
         {
             fileName,
             content = "{ \"setting1\": \"value1\", \"setting2\": \"value2\" }",
             readAt = DateTime.UtcNow
-        });
+        }));
     }
 
     [Function(nameof(GetEnvironmentVariableActivity))]

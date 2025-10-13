@@ -304,5 +304,104 @@ public class TestOrchestrator
 }";
 
             await VerifyDFA0008Diagnostic(testCode);        }
+
+        #region TaskOrchestrationContext Tests (Core DTF)
+
+        private const string TaskOrchestrationContextUsing = @"
+using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.DurableTask;
+";
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_TaskDelay_ReportsDFA0008()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        await Task.Delay(1000);
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyDFA0008Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_HttpClientGetAsync_ReportsDFA0008()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    private static readonly HttpClient httpClient = new HttpClient();
+    
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var response = await httpClient.GetStringAsync(""https://api.example.com/data"");
+        return $""Input: {input}, Response: {response}"";
+    }
+}";
+
+            await VerifyDFA0008Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_TaskRun_ReportsDFA0008()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        var result = await Task.Run(() => ProcessInput(input));
+        return result;
+    }
+    
+    private static string ProcessInput(string input)
+    {
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyDFA0008Diagnostic(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_TaskFromResult_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // Task.FromResult is synchronous and deterministic
+        var result = await Task.FromResult($""Processed: {input}"");
+        return result;
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        [Test]
+        public async Task RunAnalyzer_WithTaskOrchestrationContext_NoAsyncOperations_ReportsNoDiagnostics()
+        {
+            string testCode = TaskOrchestrationContextUsing + @"
+public class TestOrchestrator
+{
+    public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
+    {
+        // No async operations - should not trigger DFA0008
+        return $""Processed: {input}"";
+    }
+}";
+
+            await VerifyNoDiagnostics(testCode);
+        }
+
+        #endregion
     }
 }
