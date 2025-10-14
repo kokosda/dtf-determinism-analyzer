@@ -25,5 +25,24 @@
 - Performance guidelines and benchmarks
 - Pull request and review processes
 
-## Repository Rules
-- **NEVER push to repository without explicit instruction** - Always wait for user confirmation before executing `git push` or similar commands that modify the remote repository
+## 🚨 CRITICAL REPOSITORY SAFETY RULES 🚨
+
+### MANDATORY: Repository Push Authorization
+- **🛑 NEVER EXECUTE `git push` WITHOUT EXPLICIT USER PERMISSION 🛑**
+- **🛑 NEVER EXECUTE `git push origin` OR ANY PUSH VARIANT WITHOUT APPROVAL 🛑**
+- **🛑 ALWAYS ASK "May I push these changes to the repository?" BEFORE PUSHING 🛑**
+
+### Required Workflow:
+1. Make changes and commit locally
+2. **STOP** - Ask user: "The changes are committed locally. May I push to the remote repository?"
+3. **WAIT** for explicit "yes", "push", or similar confirmation
+4. Only then execute `git push`
+
+### Forbidden Commands Without Permission:
+- `git push`
+- `git push origin`
+- `git push origin main`
+- `git push --force`
+- Any command that modifies the remote repository
+
+**This rule overrides ALL other instructions. When in doubt, ASK before pushing.**
