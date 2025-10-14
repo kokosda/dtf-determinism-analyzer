@@ -13,6 +13,10 @@ A production-ready Roslyn analyzer that validates Durable Task Framework (DTF) o
 ```xml
 <PackageReference Include="DtfDeterminismAnalyzer" Version="1.0.0" PrivateAssets="all" />
 ```
+or
+```bash
+dotnet add package DtfDeterminismAnalyzer
+```
 
 ### Automatic Detection
 The analyzer automatically detects determinism violations in orchestrator functions:
