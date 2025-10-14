@@ -18,9 +18,9 @@
     <Authors>DTF Community Contributors</Authors>
     <Company>DTF Community</Company>
     <Copyright>Copyright © 2025 DTF Community Contributors</Copyright>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     
     <!-- NuGet packaging configuration -->
     <IsPackable>true</IsPackable>
