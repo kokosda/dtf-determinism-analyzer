@@ -11,7 +11,7 @@ A production-ready Roslyn analyzer that validates Durable Task Framework (DTF) o
 
 ### Installation
 ```xml
-<PackageReference Include="DtfDeterminismAnalyzer" Version="1.0.0" PrivateAssets="all" />
+<PackageReference Include="DtfDeterminismAnalyzer" PrivateAssets="all" />
 ```
 or
 ```bash
