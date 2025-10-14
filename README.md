@@ -21,9 +21,23 @@ dotnet add package DtfDeterminismAnalyzer
 ### Automatic Detection
 The analyzer automatically detects determinism violations in orchestrator functions:
 
+**Azure Durable Functions:**
 ```csharp
 [FunctionName("MyOrchestrator")]
 public static async Task<string> RunOrchestrator([OrchestrationTrigger] IDurableOrchestrationContext context)
+{
+    var time = DateTime.Now; // ⚠️ DFA0001: Use context.CurrentUtcDateTime instead
+    var id = Guid.NewGuid(); // ⚠️ DFA0002: Use context.NewGuid() instead
+    
+    // ✅ Corrected automatically with code fixes
+    var safeTime = context.CurrentUtcDateTime;
+    var safeId = context.NewGuid();
+}
+```
+
+**Durable Task Framework:**
+```csharp
+public static async Task<string> RunOrchestrationAsync(TaskOrchestrationContext context, string input)
 {
     var time = DateTime.Now; // ⚠️ DFA0001: Use context.CurrentUtcDateTime instead
     var id = Guid.NewGuid(); // ⚠️ DFA0002: Use context.NewGuid() instead
