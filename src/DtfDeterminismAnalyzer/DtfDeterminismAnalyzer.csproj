@@ -79,6 +79,13 @@
   <!-- Include code fixes from referenced project -->
   <ItemGroup>
     <None Include="../DtfDeterminismAnalyzer.CodeFixes/bin/$(Configuration)/$(TargetFramework)/DtfDeterminismAnalyzer.CodeFixes.dll" Pack="true" PackagePath="analyzers\dotnet\cs\DtfDeterminismAnalyzer.CodeFixes.dll" Visible="false" />
+    
+    <!-- Include required CodeAnalysis.Workspaces dependencies for code fixes -->
+    <None Include="$(NuGetPackageRoot)microsoft.codeanalysis.workspaces.common/4.8.0/lib/netstandard2.0/Microsoft.CodeAnalysis.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs\Microsoft.CodeAnalysis.Workspaces.dll" Visible="false" />
+    <None Include="$(NuGetPackageRoot)microsoft.codeanalysis.csharp.workspaces/4.8.0/lib/netstandard2.0/Microsoft.CodeAnalysis.CSharp.Workspaces.dll" Pack="true" PackagePath="analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Workspaces.dll" Visible="false" />
+    
+    <!-- Include System.Composition dependency for MEF exports -->
+    <None Include="$(NuGetPackageRoot)system.composition.attributedmodel/9.0.9/lib/netstandard2.0/System.Composition.AttributedModel.dll" Pack="true" PackagePath="analyzers\dotnet\cs\System.Composition.AttributedModel.dll" Visible="false" />
   </ItemGroup>
 
   <!-- Package assets -->
