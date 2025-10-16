@@ -65,9 +65,6 @@
   </ItemGroup>
 
   <!-- Project references -->
-  <ItemGroup>
-    <ProjectReference Include="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
-  </ItemGroup>
 
   <!-- Ensure code fixes are built before packaging -->
   <Target Name="BuildCodeFixes" BeforeTargets="GenerateNuspec">

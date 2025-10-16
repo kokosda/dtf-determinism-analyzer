@@ -61,8 +61,6 @@
     <!-- JSON and Configuration - Updated -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="System.Text.Json" Version="9.0.9" />
-    <!-- DTF Determinism Analyzer -->
-    <PackageVersion Include="DtfDeterminismAnalyzer" Version="1.0.0" />
   </ItemGroup>
   <!-- Note: SourceLink, MinVer, and NetAnalyzers are available as PackageVersions above -->
   <!-- Projects should reference them explicitly with <PackageReference Include="..." /> -->
