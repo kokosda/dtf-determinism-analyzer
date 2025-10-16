@@ -48,6 +48,9 @@
     <PackageVersion Include="Microsoft.DurableTask.Worker" Version="1.2.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    
+    <!-- Local analyzer for testing -->
+    <PackageVersion Include="DtfDeterminismAnalyzer" Version="1.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.3" />
     <!-- Azure Functions Worker (v4 isolated) -->
     <PackageVersion Include="Microsoft.Azure.Functions.Worker" Version="1.19.0" />

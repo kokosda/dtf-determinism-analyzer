@@ -17,11 +17,14 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
 
-  <!-- Add the DTF Determinism Analyzer -->
+  <!-- Add the DTF Determinism Analyzer as NuGet package -->
   <ItemGroup>
-    <ProjectReference Include="../../src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj" 
-                      OutputItemType="Analyzer" 
-                      ReferenceOutputAssembly="false" />
+    <PackageReference Include="DtfDeterminismAnalyzer" />
   </ItemGroup>
+
+  <!-- Add local package source for testing -->
+  <PropertyGroup>
+    <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);../../temp-local-nuget</RestoreAdditionalProjectSources>
+  </PropertyGroup>
 
 </Project>
