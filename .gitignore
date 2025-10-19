@@ -465,3 +465,6 @@ sonar-project.properties
 .specify/
 specs/
 .vscode/
+
+# Local development packages
+local-nuget-packages/

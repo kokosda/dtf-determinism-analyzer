@@ -108,6 +108,10 @@
 3. **Restart Language Service**
    - VS Code: Reload window (`Ctrl+Shift+P` → "Developer: Reload Window")
    - Visual Studio: Close/reopen solution
+
+4. **Visual Studio Project Reference Issues**
+   - See the [Code Fixes Guide](code-fixes.md) for comprehensive troubleshooting
+   - Code fixes may not work with project references - use NuGet packages instead
    - Rider: Invalidate caches and restart
 
 ### Performance Issues

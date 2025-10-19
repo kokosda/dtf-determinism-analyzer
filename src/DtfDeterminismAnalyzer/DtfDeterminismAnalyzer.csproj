@@ -65,10 +65,49 @@
   </ItemGroup>
 
   <!-- Project references -->
+  <ItemGroup>
+    <!-- Reference code fixes project but don't include it in normal assembly references -->
+    <ProjectReference Include="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" 
+                      ReferenceOutputAssembly="false" 
+                      OutputItemType="Analyzer" 
+                      PrivateAssets="all" />
+  </ItemGroup>
 
   <!-- Ensure code fixes are built before packaging -->
   <Target Name="BuildCodeFixes" BeforeTargets="GenerateNuspec">
     <MSBuild Projects="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
+  </Target>
+
+  <!-- When this project is referenced as an analyzer, include both assemblies -->
+  <Target Name="IncludeCodeFixesInAnalyzer" BeforeTargets="CoreCompile" Condition="'$(OutputItemType)' == 'Analyzer'">
+    <ItemGroup>
+      <!-- Include the main analyzer assembly -->
+      <Analyzer Include="$(OutputPath)$(AssemblyName).dll" />
+      <!-- Include the code fixes assembly -->
+      <Analyzer Include="$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll" Condition="Exists('$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll')" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Provide analyzer assemblies when referenced as analyzer -->
+  <Target Name="GetAnalyzerAssemblies" Returns="@(AnalyzerAssembly)">
+    <ItemGroup>
+      <!-- Main analyzer -->
+      <AnalyzerAssembly Include="$(TargetPath)" />
+      <!-- Code fixes -->
+      <AnalyzerAssembly Include="$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll" 
+                        Condition="Exists('$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll')" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Override GetTargetPath to include both analyzer and code fixes for project references -->
+  <Target Name="GetTargetPathWithCodeFixes" DependsOnTargets="GetTargetPath" Returns="@(AnalyzerFiles)" Condition="'$(ReferenceOutputAssembly)' == 'false' and '$(OutputItemType)' == 'Analyzer'">
+    <ItemGroup>
+      <!-- Include main analyzer assembly -->
+      <AnalyzerFiles Include="$(TargetPath)" />
+      <!-- Include code fixes assembly if it exists -->
+      <AnalyzerFiles Include="$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll"
+                     Condition="Exists('$(MSBuildProjectDirectory)\..\DtfDeterminismAnalyzer.CodeFixes\bin\$(Configuration)\$(TargetFramework)\DtfDeterminismAnalyzer.CodeFixes.dll')" />
+    </ItemGroup>
   </Target>
 
   <!-- Include analyzer in package - use correct output path -->

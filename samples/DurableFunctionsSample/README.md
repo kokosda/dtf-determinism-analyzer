@@ -205,7 +205,7 @@ A: Make sure the DTF Determinism Analyzer project is built and the reference is 
 A: Ensure the storage emulator is running and `local.settings.json` has the correct connection string.
 
 **Q: Code fixes don't appear**
-A: Restart your IDE and ensure the analyzer assembly is properly loaded.
+A: See the [Code Fixes Guide](../../docs/code-fixes.md) for comprehensive troubleshooting and solutions.
 
 ### Debug Tips
 

@@ -1,5 +1,7 @@
 # Configuration Guide
 
+> **For Contributors:** If you're developing the analyzer itself, see the [Local Development Guide](local-development.md) for build and testing workflows.
+
 ## Rule Severity Customization
 
 Configure rule severities in your project's `.editorconfig` file:

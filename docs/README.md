@@ -20,7 +20,7 @@ Welcome to the comprehensive documentation for DTF Determinism Analyzer.
 
 ### Development
 - [Contributing Guidelines](../CONTRIBUTING.md) - How to contribute to the project
-- [Development Setup](development.md) - Setting up the development environment
+- [Local Development Guide](local-development.md) - Comprehensive guide for local development, code fix testing, and cross-platform setup
 
 ## 🔗 Quick Links
 

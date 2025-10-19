@@ -59,7 +59,9 @@ Press `Ctrl+.` (Windows) or `Cmd+.` (macOS) to apply automatic fixes for common 
 | **📋 All Rules & Examples** | [Complete Rules Documentation](docs/rules.md) |
 | **⚙️ Configuration** | [Configuration Guide](docs/configuration.md) |
 | **🔧 Troubleshooting** | [Troubleshooting Guide](docs/troubleshooting.md) |
-| **💡 Code Examples** | [Complete Examples](docs/examples.md) |
+| **� Code Fixes** | [Code Fixes Guide](docs/code-fixes.md) |
+| **�💡 Code Examples** | [Complete Examples](docs/examples.md) |
+| **🛠️ Local Development** | [Local Development Guide](docs/local-development.md) |
 
 ## ✅ Supported Rules
 
@@ -129,9 +131,18 @@ We welcome contributions! See our [Contributing Guidelines](CONTRIBUTING.md) for
 ```bash
 git clone https://github.com/kokosda/dtf-determinism-analyzer.git
 cd dtf-determinism-analyzer
+
+# Quick start with automated script (cross-platform)
+```powershell
+.\scripts\test-codefixes.ps1
+```
+
+# Manual setup
 dotnet build
 dotnet test
 ```
+
+For comprehensive development workflows, code fix testing, and cross-platform setup instructions, see the **[Local Development Guide](docs/local-development.md)**.
 
 ## 📋 Project Status
 

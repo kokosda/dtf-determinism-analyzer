@@ -66,13 +66,23 @@ This project follows the [.NET Foundation Code of Conduct](https://dotnetfoundat
 
 ### Development Setup
 
+For comprehensive development setup including cross-platform support, code fix testing, and various development workflows, see the **[Local Development Guide](docs/local-development.md)**.
+
+**Quick Setup:**
+
 1. **Fork and Clone**
    ```bash
    git clone https://github.com/your-username/dtf-determinism-analyzer.git
    cd dtf-determinism-analyzer
    ```
 
-2. **Restore Dependencies**
+2. **Automated Development Setup**
+   ```bash
+   # Cross-platform script for code fix testing
+   .\scripts\test-codefixes.ps1
+   ```
+
+3. **Manual Setup**
    ```bash
    dotnet restore
    ```
