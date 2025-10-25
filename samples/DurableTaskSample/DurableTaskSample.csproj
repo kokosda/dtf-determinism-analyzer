@@ -19,12 +19,13 @@
 
   <!-- Add the DTF Determinism Analyzer -->
   <!-- Option 1: Use NuGet package for full code fix support in Visual Studio -->
+  <!--
   <ItemGroup>
     <PackageReference Include="DtfDeterminismAnalyzer" />
   </ItemGroup>
+  -->
   
   <!-- Option 2: Use project references (analyzers work, but code fixes may not appear in Visual Studio when projects are in same solution) -->
-  <!--
   <ItemGroup>
     <ProjectReference Include="../../src/DtfDeterminismAnalyzer/DtfDeterminismAnalyzer.csproj" 
                       OutputItemType="Analyzer" 
@@ -33,6 +34,5 @@
                       OutputItemType="Analyzer" 
                       ReferenceOutputAssembly="false" />
   </ItemGroup>
-  -->
 
 </Project>
