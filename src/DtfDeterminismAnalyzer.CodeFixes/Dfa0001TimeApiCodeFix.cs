@@ -48,7 +48,18 @@ namespace DtfDeterminismAnalyzer.CodeFixes
             foreach (Diagnostic? diagnostic in context.Diagnostics.Where(d => FixableDiagnosticIds.Contains(d.Id)))
             {
                 Microsoft.CodeAnalysis.Text.TextSpan diagnosticSpan = diagnostic.Location.SourceSpan;
-                if (root.FindNode(diagnosticSpan) is not MemberAccessExpressionSyntax memberAccess)
+                SyntaxNode? node = root.FindNode(diagnosticSpan);
+
+                // Handle both InvocationExpressionSyntax (for method calls like Stopwatch.GetTimestamp())
+                // and MemberAccessExpressionSyntax (for property access like DateTime.Now)
+                MemberAccessExpressionSyntax? memberAccess = node switch
+                {
+                    MemberAccessExpressionSyntax m => m,
+                    InvocationExpressionSyntax invocation when invocation.Expression is MemberAccessExpressionSyntax m => m,
+                    _ => null
+                };
+
+                if (memberAccess == null)
                 {
                     continue;
                 }
@@ -63,7 +74,9 @@ namespace DtfDeterminismAnalyzer.CodeFixes
                 }
                 else if (typeName == "Stopwatch" && (memberName == "StartNew" || memberName == "Start" || memberName == "GetTimestamp"))
                 {
-                    RegisterStopwatchCodeFix(context, diagnostic, root, memberAccess, memberName);
+                    // For method invocations, we need to replace the entire invocation
+                    SyntaxNode nodeToReplace = node is InvocationExpressionSyntax ? node : memberAccess;
+                    RegisterStopwatchCodeFix(context, diagnostic, root, memberAccess, nodeToReplace, memberName);
                 }
             }
         }
@@ -94,7 +107,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// Registers a code fix for Stopwatch API usage.
         /// </summary>
         private static void RegisterStopwatchCodeFix(CodeFixContext context, Diagnostic diagnostic, SyntaxNode root,
-            MemberAccessExpressionSyntax memberAccess, string memberName)
+            MemberAccessExpressionSyntax memberAccess, SyntaxNode nodeToReplace, string memberName)
         {
             string title = memberName switch
             {
@@ -106,7 +119,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
 
             var action = CodeAction.Create(
                 title: title,
-                createChangedDocument: c => FixStopwatchUsage(context.Document, root, memberAccess, memberName, c),
+                createChangedDocument: c => FixStopwatchUsage(context.Document, root, memberAccess, nodeToReplace, memberName, c),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(action, diagnostic);
@@ -151,7 +164,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
         /// Fixes Stopwatch API usage by replacing with durable timer alternatives.
         /// </summary>
         private static async Task<Document> FixStopwatchUsage(Document document, SyntaxNode root,
-            MemberAccessExpressionSyntax memberAccess, string memberName, CancellationToken cancellationToken)
+            MemberAccessExpressionSyntax memberAccess, SyntaxNode nodeToReplace, string memberName, CancellationToken cancellationToken)
         {
             string? orchestratorContextParameter = await FindOrchestratorContextParameter(document, memberAccess, cancellationToken);
             if (orchestratorContextParameter == null)
@@ -182,7 +195,7 @@ namespace DtfDeterminismAnalyzer.CodeFixes
                     SyntaxFactory.IdentifierName("CurrentUtcDateTime"));
             }
 
-            SyntaxNode newRoot = root.ReplaceNode(memberAccess, replacement);
+            SyntaxNode newRoot = root.ReplaceNode(nodeToReplace, replacement);
             return document.WithSyntaxRoot(newRoot);
         }
 
