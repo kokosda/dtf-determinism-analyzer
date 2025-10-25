@@ -74,7 +74,7 @@
   </ItemGroup>
 
   <!-- Ensure code fixes are built before packaging -->
-  <Target Name="BuildCodeFixes" BeforeTargets="GenerateNuspec">
+  <Target Name="BuildCodeFixes" BeforeTargets="GenerateNuspec" Condition="'$(NoBuild)' != 'true'">
     <MSBuild Projects="../DtfDeterminismAnalyzer.CodeFixes/DtfDeterminismAnalyzer.CodeFixes.csproj" Targets="Build" Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework)" />
   </Target>
 
