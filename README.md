@@ -131,13 +131,15 @@ We welcome contributions! See our [Contributing Guidelines](CONTRIBUTING.md) for
 ```bash
 git clone https://github.com/kokosda/dtf-determinism-analyzer.git
 cd dtf-determinism-analyzer
+```
 
-# Quick start with automated script (cross-platform)
+**Quick start with automated script (cross-platform):**
 ```powershell
 .\scripts\test-codefixes.ps1
 ```
 
-# Manual setup
+**Manual setup:**
+```bash
 dotnet build
 dotnet test
 ```
@@ -146,7 +148,7 @@ For comprehensive development workflows, code fix testing, and cross-platform se
 
 ## 📋 Project Status
 
-- ✅ **170+ Unit Tests** covering all analyzer rules
+- ✅ **200+ Unit Tests** covering all analyzer rules and code fixes
 - ✅ **Automated CI/CD** pipeline with GitHub Actions  
 - ✅ **NuGet Package** published and maintained
 - ✅ **Security Scanning** with Dependabot and CodeQL
