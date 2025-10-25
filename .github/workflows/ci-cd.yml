@@ -134,13 +134,10 @@ jobs:
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
     
-    # FIRST-TIME SETUP REQUIRED:
-    # 1. For initial package creation: Add NUGET_API_KEY secret and uncomment the API key line below
-    # 2. After first successful publish: Remove the secret and rely on Trusted Publishers
+    # Using Trusted Publishers (OIDC) - No API key needed
+    # Trusted Publisher is configured on NuGet.org for this repository
     - name: Publish to NuGet
       run: dotnet nuget push ./artifacts/*.nupkg --source https://api.nuget.org/v3/index.json --skip-duplicate
-      # Uncomment for first-time publish only:
-      # run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
       
   publish-github:
     name: Publish to GitHub Packages
