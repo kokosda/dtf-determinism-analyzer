@@ -12,6 +12,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Consideration for custom rule configuration options
 - Future integration with additional Durable Task Framework patterns
 
+## [1.0.1] - 2025-10-13
+
+### Fixed
+- **DFA0004 False Positives**: Fixed incorrect detection of I/O operations in activity functions - analyzer now properly excludes activity function contexts
+- **DFA0005 False Positives**: Resolved false positive detection for environment access in activity functions - improved context detection
+- **DFA0006 False Positives**: Enhanced static state analyzer to avoid flagging activity functions incorrectly
+- **DFA0008 False Positives**: Improved non-durable async detection to properly distinguish orchestrator and activity contexts
+- **Build Warnings**: Fixed Visual Studio 2022 build output warning related to framework target mismatch
+- **Sample Projects**: Resolved compilation errors in sample projects by including CodeFixes package reference
+- **LogMessage Warnings**: Suppressed code analysis warnings for LogMessage partial methods in sample projects
+
+### Changed
+- **Sample Organization**: Reorganized sample project files by type (orchestrators, activities, etc.) for better readability
+- **DFA0010 Examples**: Added comprehensive samples demonstrating Azure Functions binding parameter violations
+- **Test Coverage**: Added extensive test cases for false positive scenarios across DFA0004, DFA0005, DFA0006, and DFA0008 rules
+
+### Security
+- **GitHub Actions Hardening**: Added explicit permissions declarations to all GitHub Actions workflows following security best practices
+  - `ci-cd.yml`: Restricted permissions with explicit grants for contents, packages, and pull-requests
+  - `quality.yml`: Added read-only permissions for contents and pull-requests
+  - `release.yml`: Added write permissions for contents and packages
+  - `security.yml`: Added read-only permissions for security-events
+  - `test-matrix.yml`: Added read-only contents permission
+
+### Technical Improvements
+- **Activity Detection**: Enhanced `OrchestratorDetectionHelper` to properly identify and exclude activity functions from orchestrator-specific rules
+- **Test Infrastructure**: Expanded test suite with 440+ new lines of test code covering edge cases and false positive scenarios
+- **Sample Code Quality**: Improved sample projects with better type organization and realistic usage patterns
+
 ## [1.0.0] - 2025-09-29
 
 ### Added
@@ -147,6 +176,7 @@ Automated code fixes for common violations:
 
 | Version | Release Date | Key Features | Diagnostic Rules |
 |---------|--------------|--------------|------------------|
+| 1.0.1   | 2025-10-13   | False positive fixes, security hardening | DFA0001-DFA0010 |
 | 1.0.0   | 2025-09-18   | Initial release, all core rules, code fixes | DFA0001-DFA0010 |
 
 ---
